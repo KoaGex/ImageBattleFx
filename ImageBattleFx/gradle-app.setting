@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<root> 
+  <setting name="task-tab"> 
+    <setting name="show-description" value="true"/> 
+  </setting>  
+  <setting name="favorites-tab">
+    <setting name="favorites">
+      <setting name="favorite">
+        <setting name="full-command-line" value=":getDeps"/>
+        <setting name="display-name" value=":getDeps"/>
+        <setting name="show-output" value="false"/>
+      </setting>
+      <setting name="favorite">
+        <setting name="full-command-line" value=":installDist"/>
+        <setting name="display-name" value=":installDist"/>
+        <setting name="show-output" value="false"/>
+      </setting>
+    </setting>
+  </setting>  
+  <setting name="command_line-tab"/>  
+  <setting name="setup-tab"> 
+    <setting name="setup"> 
+      <setting name="custom-gradle-executor"/>  
+      <setting name="current-directory" value="D:\git-repositories\image-battle\ImageBattleFx"/>  
+      <setting name="log-level" value="LIFECYCLE"/> 
+    </setting> 
+  </setting>  
+  <setting name="SinglePaneUIInstance_splitter-id"> 
+    <setting name="divider_location" value="572"/> 
+  </setting>  
+  <setting name="main_panel"> 
+    <setting name="current-tab" value="Task Tree"/> 
+  </setting>  
+  <setting name="Application_window-id"> 
+    <setting name="window_x" value="952"/>  
+    <setting name="window_y" value="8"/>  
+    <setting name="window_width" value="887"/>  
+    <setting name="window_height" value="1010"/>  
+    <setting name="extended-state" value="0"/> 
+  </setting> 
+</root>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="resources"/>
+	<classpathentry kind="src" path="src/main/java"/>
+	<classpathentry kind="src" path="src/main/resources"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="lib/log4j-api-2.3.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:file:/D:/downloads/apache-log4j-2.3-bin/apache-log4j-2.3-bin/log4j-api-2.3-javadoc.jar!/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="lib/log4j-core-2.3.jar"/>
+	<classpathentry kind="lib" path="lib/spark-core-2.2.jar"/>
+	<classpathentry kind="lib" path="lib/javax.servlet-3.0.0.v201112011016.jar"/>
+	<classpathentry kind="lib" path="lib/jetty-http-9.0.2.v20130417.jar"/>
+	<classpathentry kind="lib" path="lib/jetty-io-9.0.2.v20130417.jar"/>
+	<classpathentry kind="lib" path="lib/jetty-security-9.0.2.v20130417.jar"/>
+	<classpathentry kind="lib" path="lib/jetty-server-9.0.2.v20130417.jar"/>
+	<classpathentry kind="lib" path="lib/jetty-servlet-9.0.2.v20130417.jar"/>
+	<classpathentry kind="lib" path="lib/jetty-util-9.0.2.v20130417.jar"/>
+	<classpathentry kind="lib" path="lib/jetty-webapp-9.0.2.v20130417.jar"/>
+	<classpathentry kind="lib" path="lib/jetty-xml-9.0.2.v20130417.jar"/>
+	<classpathentry kind="lib" path="lib/slf4j-api-1.7.7.jar"/>
+	<classpathentry kind="lib" path="lib/slf4j-simple-1.7.7.jar"/>
+	<classpathentry kind="lib" path="lib/metadata-extractor-2.8.1.jar"/>
+	<classpathentry kind="lib" path="lib/xmpcore-5.1.2.jar"/>
+	<classpathentry kind="lib" path="lib/jgrapht-core-0.9.1.jar" sourcepath="lib/jgrapht-core-0.9.1-sources.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

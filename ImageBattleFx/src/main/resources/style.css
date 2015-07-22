@@ -1,0 +1,35 @@
+/*   https://docs.oracle.com/javase/8/javafx/api/javafx/scene/doc-files/cssref.html */
+.place-label {
+	-fx-padding: 20;
+	-fx-background-radius: 12;
+	-fx-background-insets: 14;
+	-fx-background-color: black;
+	-fx-text-fill: white;
+	-fx-opacity: 0.75;
+	-fx-font: 24px "Arial";
+	-fx-font-size: 20px;
+	-fx-font-family: sans-serif;
+}
+
+.resolution-label {
+	-fx-padding: 20;
+	-fx-background-radius: 12;
+	-fx-background-insets: 14;
+	-fx-background-color: black;
+	-fx-text-fill: white;
+	-fx-opacity: 0.75;
+	-fx-font: 24px "Arial";
+	-fx-font-size: 20px;
+	-fx-font-family: sans-serif;
+}
+
+.button {
+	-fx-alignment: bottom-right;
+	-fx-padding: 5;
+	-fx-opacity: 0.65;
+	-fx-font: 20px "Arial";
+}
+
+.menu-bar {
+	-fx-opacity: 0.75;
+}
