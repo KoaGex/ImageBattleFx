@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.Set;
 import java.util.function.BiConsumer;
 
 import javafx.util.Pair;
@@ -91,5 +92,16 @@ public class TransitiveDiGraph2 extends SimpleDirectedGraph<File, DefaultEdge> {
 				percent);
 
 		return result;
+	}
+
+	int getMaxEdgeCount() {
+		Set<File> vertexSet = this.vertexSet();
+		int nodeCount = vertexSet.size();
+		int maxEdgeCount = nodeCount * (nodeCount - 1) / 2;
+		return maxEdgeCount;
+	}
+
+	int getCurrentEdgeCount() {
+		return this.edgeSet().size();
 	}
 }

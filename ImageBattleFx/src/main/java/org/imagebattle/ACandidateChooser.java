@@ -38,7 +38,6 @@ public abstract class ACandidateChooser {
 	}
 
 	final Pair<File, File> getNextCandidates() throws BattleFinishedException {
-		Set<File> vertexSet = graph2.vertexSet();
 		int calculatedCandidateCount = getCalculatedCandidateCount();
 		
 		if( calculatedCandidateCount == 0) {
