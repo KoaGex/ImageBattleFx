@@ -17,11 +17,19 @@ public class ImageBattleApplication extends Application {
 
 	// Issue list
 
-	// TODO test github with a new project
-	// TODO github: how to license properly?
-	// TODO commit image Battle
 
-	// TODO show ranking progress
+	// TODO export the result list (txt, csv, html)
+	// TODO battleScene: rotate images
+	// TODO Hotkey overview
+	// TODO do imageBattle on result of online image search
+	// TODO menu->view: make all detail information like place,resolution, filename optional
+	// TODO better fileChooser that shows image count, maybe previews?! treeView
+	// TODO use TreeSets to speed up choosers with sorting
+	// TODO generic trying of the winner oriented chooser to optimize the coefficients?
+	// TODO chooser: choose images with close to each other resolution (product)
+	// TODO in battle scene show the current ranking place ?
+	// TODO ranking diashow
+	// TODO ranking: click image to fullscreen/diashow , then navigate with arrow keys
 	// TODO hotkeys for ignore left,right,both
 	// TODO ranking scene: button to un-ignore images
 	// TODO threaded: getNextCandidates before user makes decision, load them and then check if still valid
@@ -31,11 +39,10 @@ public class ImageBattleApplication extends Application {
 	// TODO recursive compare with all sub directories
 	// TODO error handling: directory with .dat was moved
 	// TODO can the process be speed up even more for many images ( >200 ) ?
-	// TODO context menu: ignore in battle, delete on file system
+	// TODO context menu: delete on file system
 	// TODO Diagrams of wins and loses to display total progress
 	// TODO compare videos, music
 	// TODO all actions as icon buttons
-	// TODO allow ranking correction
 	// TODO identify images by hash value? to keep wins after renaming
 	// TODO move decision count into one new dialog together with edge count, and other information about how far the battle has come.
 	// TODO remember dimensions for each scene

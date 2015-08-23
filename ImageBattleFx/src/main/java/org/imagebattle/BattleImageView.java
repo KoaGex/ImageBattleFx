@@ -5,15 +5,13 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import javafx.beans.property.StringProperty;
-import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.StackPane;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 /**
  * One imageview in the battle. Has a label that shows the current images resolution.
@@ -49,7 +47,7 @@ public class BattleImageView extends ImageView {
 		// TODO try to improve performance even more with lower resolutions
 		Image image = new Image(fis, 1920, 1080d, true, true); // this improves speed by ~ 100ms but breaks the resolution reading => use SimpleImageInfo
 		long end = System.currentTimeMillis();
-		log.debug("needed {} ms to load image {}", (end - start), imageFile);
+		log.trace("needed {} ms to load image {}", (end - start), imageFile.getName());
 
 		super.setImage(image);
 		String resolution1 = "x";

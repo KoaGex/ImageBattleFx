@@ -16,14 +16,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import javafx.util.Pair;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import javafx.util.Pair;
 
 /**
  * @author Besitzer
@@ -103,7 +104,6 @@ public class ImageBattleFolder implements Serializable {
 
 	    // TODO use regex
 	    // supported formats :BMP, GIF, JPEG, PNG
-	    List<String> allowedEndings = Arrays.asList(".jpg", ".jpeg", ".png");
 	    Pattern pattern = Pattern.compile(".*\\.(BMP|GIF|JPEG|JPG|PNG)");
 	    currentFiles.removeIf(file -> {
 		boolean isDirectory = file.isDirectory();
@@ -147,23 +147,31 @@ public class ImageBattleFolder implements Serializable {
 	newChoosingAlorithms.put("Chronologic KO", new ChronologicKoCandidateChooser(result.graph2));
 	newChoosingAlorithms.put("Random", new RandomCandidateChooser(result.graph2));
 	newChoosingAlorithms.put("MaxNewEdges", new MaxNewEdgesCandidateChoser(result.graph2));
+	newChoosingAlorithms.put("RankingTopDown", new RankingTopDownCandidateChooser(result.graph2));
+	newChoosingAlorithms.put("BiSection", new BiSectionCandidateChooser(result.graph2));
+	newChoosingAlorithms.put("MinimumDegree", new MinimumDegreeCandidateChooser(result.graph2));
 
 	result.choosingAlgorithm = winnerOriented;
 
 	return result;
     }
 
-    public ResultListEntry fileToResultEntry(File i) {
+     ResultListEntry fileToResultEntry(File i) {
 	ResultListEntry entry = new ResultListEntry();
 	entry.file = i;
 	entry.wins = graph2.outDegreeOf(i);
 	entry.loses = graph2.inDegreeOf(i);
+	entry.fixed = graph2.vertexSet().size() - 1 == entry.wins + entry.loses;
 	return entry;
     }
 
     List<ResultListEntry> getResultList() {
-	Comparator<File> winnerFirstComparator = Comparator.comparing(graph2::outDegreeOf).reversed()
-		.thenComparing(Comparator.comparing(graph2::inDegreeOf));
+	Function<File, Integer> toWinLoseDifference = file -> graph2.outDegreeOf(file) - graph2.inDegreeOf(file);
+	// Comparator<File> winnerFirstComparator =
+	// Comparator.comparing(graph2::outDegreeOf).reversed()
+	// .thenComparing(Comparator.comparing(graph2::inDegreeOf));
+	Comparator<File> winnerFirstComparator = Comparator.comparing(toWinLoseDifference::apply,
+		Comparator.reverseOrder());
 	List<ResultListEntry> resultList = graph2.vertexSet().stream() //
 		.sorted(winnerFirstComparator)//
 		.map(this::fileToResultEntry)//
@@ -185,7 +193,7 @@ public class ImageBattleFolder implements Serializable {
 	return resultList;
     }
 
-    public void makeDecision(File pWinner, File pLoser) {
+    void makeDecision(File pWinner, File pLoser) {
 	graph2.addEdge(pWinner, pLoser);
 	humanDecisionCount++;
     }
@@ -201,7 +209,7 @@ public class ImageBattleFolder implements Serializable {
 	log.info(pAlgorithmName);
     }
 
-    public Pair<File, File> getNextToCompare() throws BattleFinishedException {
+    Pair<File, File> getNextToCompare() throws BattleFinishedException {
 
 	Pair<File, File> nextToCompare = null;
 
@@ -215,11 +223,11 @@ public class ImageBattleFolder implements Serializable {
 	    long duration = System.currentTimeMillis() - start;
 	    log.debug("time needed to find next pair: {} ms", duration);
 
-	    log.info("nextToCompare:" + nextToCompare);
-
 	    // check for images that have been deleted in the meantime
 	    File key = nextToCompare.getKey();
 	    File value = nextToCompare.getValue();
+
+	    log.info("nextToCompare: key={}    value={}", key.getName(), value.getName());
 
 	    bothExist = true;
 	    if (!key.exists()) {
@@ -261,9 +269,17 @@ public class ImageBattleFolder implements Serializable {
 	graph2.removeVertex(file);
     }
 
-    public double getProgress() {
+    double getProgress() {
 	int maxEdgeCount = graph2.getMaxEdgeCount();
 	int currentEdgeCount = graph2.getCurrentEdgeCount();
 	return Double.valueOf(currentEdgeCount) / Double.valueOf(maxEdgeCount);
+    }
+
+    /**
+     * @param pFileToReset remove this file from the graph and then add it again to remove all edges to and from the file.
+     */
+    void reset(File pFileToReset) {
+	graph2.removeVertex(pFileToReset);
+	graph2.addVertex(pFileToReset);
     }
 }

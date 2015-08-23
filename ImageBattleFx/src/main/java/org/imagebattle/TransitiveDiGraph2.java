@@ -7,12 +7,12 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.function.BiConsumer;
 
-import javafx.util.Pair;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.SimpleDirectedGraph;
+
+import javafx.util.Pair;
 
 public class TransitiveDiGraph2 extends SimpleDirectedGraph<File, DefaultEdge> {
 	private static Logger log = LogManager.getLogger();
@@ -38,14 +38,14 @@ public class TransitiveDiGraph2 extends SimpleDirectedGraph<File, DefaultEdge> {
 
 		DefaultEdge result = null;
 
-		log.info(sourceVertex + " won against " + targetVertex);
+		log.info(sourceVertex.getName() + " won against " + targetVertex.getName());
 
 		BiConsumer<File, File> addEdge = (from, to) -> {
 			boolean edgeExists = super.containsEdge(from, to) || super.containsEdge(to, from);
 			if (edgeExists) {
-				log.trace("edge already set:" + from + " -> " + to);
+				log.trace("edge already set:" + from.getName() + " -> " + to.getName());
 			} else {
-				log.trace("add edge " + from + " -> " + to);
+				log.trace("add edge " + from.getName() + " -> " + to.getName());
 				// use super. without it would quickly result in an infinite recursive loop
 				DefaultEdge result2 = super.addEdge(from, to); // TODO use the return value ?!
 				// result = (result == null) ? result2 : result; TODO after adding use getEdge ?
@@ -79,7 +79,7 @@ public class TransitiveDiGraph2 extends SimpleDirectedGraph<File, DefaultEdge> {
 					.map(super::getEdgeSource) //
 					.filter(a -> !super.containsEdge(c, a) && !super.containsEdge(a, c)) // TODO double check needed?
 					.map(a -> new Pair<File, File>(a, c))//
-					.peek(log::debug) //
+					.peek(log::trace) //
 					.forEach(queue::add);
 		}
 
