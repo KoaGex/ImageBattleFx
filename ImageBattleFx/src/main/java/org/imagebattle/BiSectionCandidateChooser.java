@@ -86,6 +86,7 @@ public class BiSectionCandidateChooser extends ACandidateChooser {
 
 	log.debug("self:{} wW:{} bL:{} medium:{} other:{} diff:{}", rankingList.indexOf(minimumDegreeCandidate),
 		worstWinner, bestLooser, medium, rankingList.indexOf(otherCandidate), bestLooser - worstWinner);
+	// TODO i dont think this works correctly. debug by viewing the winner and looser lists.
 
 	return new Pair<File, File>(minimumDegreeCandidate, otherCandidate);
     }

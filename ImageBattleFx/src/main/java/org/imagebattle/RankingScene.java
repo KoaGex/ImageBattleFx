@@ -130,8 +130,9 @@ public class RankingScene extends Scene {
 	String placeLabelText = entry.ignored ? "ignore" : String.valueOf(entry.place);
 	Label placeLabel = new Label(placeLabelText);
 	placeLabel.getStyleClass().add("place-label");
-	stackPane.getChildren().addAll(imageView, placeLabel);
-	StackPane.setMargin(imageView, new Insets(5d));
+	Node item = image == null ? new Label(entry.file.getName()) : imageView;
+	stackPane.getChildren().addAll(item, placeLabel);
+	StackPane.setMargin(item, new Insets(5d));
 	StackPane.setAlignment(placeLabel, Pos.TOP_LEFT);
 
 	String toolTipText = "wins: " + entry.wins + "\nloses: " + entry.loses + "\nFile: " + file.getName();

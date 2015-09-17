@@ -3,10 +3,10 @@ package org.imagebattle;
 import java.io.File;
 import java.util.Random;
 
-import javafx.util.Pair;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import javafx.util.Pair;
 
 public class RandomCandidateChooser extends ACandidateChooser {
 
@@ -26,7 +26,7 @@ public class RandomCandidateChooser extends ACandidateChooser {
 		Pair<File, File> pair = getCandidateStream().skip(nextInt).findAny().get();
 
 		long end = System.currentTimeMillis();
-		log.debug("time needed: {}", end - start);
+		log.trace("time needed: {}", end - start);
 		return pair;
 	}
 }

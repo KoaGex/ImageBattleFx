@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -31,6 +30,8 @@ import javafx.util.Pair;
  *
  */
 public class ImageBattleFolder implements Serializable {
+    static final String IMAGE_BATTLE_DAT = "imageBattle.dat";
+
     private static Logger log = LogManager.getLogger();
 
     /**
@@ -55,29 +56,32 @@ public class ImageBattleFolder implements Serializable {
      * {@link #readOrCreate(File)}.
      * 
      * @param chosenDirectory
+     * @param fileRegex
      */
-    private ImageBattleFolder(File chosenDirectory) {
-	datFile = new File(chosenDirectory.getAbsolutePath() + File.separator + "imageBattle.dat");
+    private ImageBattleFolder(File chosenDirectory, String fileRegex) {
+	datFile = new File(chosenDirectory.getAbsolutePath() + File.separator + IMAGE_BATTLE_DAT);
 
 	File[] allFiles = chosenDirectory.listFiles();
 	// TODO handle directory without images chosen
 	// TODO support more image formats, png.
 	// TODO possible to show moving gifs?
 	LinkedList<File> currentLevel = new LinkedList<>();
+	Pattern pattern = Pattern.compile(fileRegex);
 	for (File aFile : allFiles) {
-	    if (aFile.getName().toLowerCase().endsWith(".jpg")) {
+	    if (pattern.matcher(aFile.getName().toUpperCase()).matches()) {
 		currentLevel.add(aFile);
 	    }
 	}
+	log.debug("file count:" + currentLevel.size());
 	graph2 = new TransitiveDiGraph2(currentLevel);
 
     }
 
-    static ImageBattleFolder readOrCreate(File chosenDirectory) {
+    static ImageBattleFolder readOrCreate(File chosenDirectory, String fileRegex) {
 	log.info("chosenDirectory: {}", chosenDirectory);
 	ImageBattleFolder result = null;
 
-	File datFile = new File(chosenDirectory.getAbsolutePath() + File.separator + "imageBattle.dat");
+	File datFile = new File(chosenDirectory.getAbsolutePath() + File.separator + IMAGE_BATTLE_DAT);
 	if (datFile.exists()) {
 	    ObjectInputStream ois;
 	    try {
@@ -95,7 +99,7 @@ public class ImageBattleFolder implements Serializable {
 
 	if (result == null) {
 	    log.info("create new");
-	    result = new ImageBattleFolder(chosenDirectory);
+	    result = new ImageBattleFolder(chosenDirectory, fileRegex);
 	} else {
 	    // search for new images and add them
 	    List<File> currentFileArray = Arrays.asList(chosenDirectory.listFiles());
@@ -110,7 +114,7 @@ public class ImageBattleFolder implements Serializable {
 		String fileName = file.getName();
 		Matcher matcher = pattern.matcher(fileName.toUpperCase());
 		boolean removeIfResult = isDirectory || !matcher.matches();
-		log.debug("matches: {}      \t    \tfile: {}", !removeIfResult, fileName);
+		log.trace("matches: {}      \t    \tfile: {}", !removeIfResult, fileName);
 		return removeIfResult;
 	    });
 
@@ -150,13 +154,14 @@ public class ImageBattleFolder implements Serializable {
 	newChoosingAlorithms.put("RankingTopDown", new RankingTopDownCandidateChooser(result.graph2));
 	newChoosingAlorithms.put("BiSection", new BiSectionCandidateChooser(result.graph2));
 	newChoosingAlorithms.put("MinimumDegree", new MinimumDegreeCandidateChooser(result.graph2));
+	newChoosingAlorithms.put("SameWinLoseRatio", new SameWinLoseRationCandidateChooser(result.graph2));
 
 	result.choosingAlgorithm = winnerOriented;
 
 	return result;
     }
 
-     ResultListEntry fileToResultEntry(File i) {
+    ResultListEntry fileToResultEntry(File i) {
 	ResultListEntry entry = new ResultListEntry();
 	entry.file = i;
 	entry.wins = graph2.outDegreeOf(i);
@@ -166,11 +171,11 @@ public class ImageBattleFolder implements Serializable {
     }
 
     List<ResultListEntry> getResultList() {
-	Function<File, Integer> toWinLoseDifference = file -> graph2.outDegreeOf(file) - graph2.inDegreeOf(file);
+
 	// Comparator<File> winnerFirstComparator =
 	// Comparator.comparing(graph2::outDegreeOf).reversed()
 	// .thenComparing(Comparator.comparing(graph2::inDegreeOf));
-	Comparator<File> winnerFirstComparator = Comparator.comparing(toWinLoseDifference::apply,
+	Comparator<File> winnerFirstComparator = Comparator.comparing(graph2::getWinLoseDifference,
 		Comparator.reverseOrder());
 	List<ResultListEntry> resultList = graph2.vertexSet().stream() //
 		.sorted(winnerFirstComparator)//
@@ -221,13 +226,13 @@ public class ImageBattleFolder implements Serializable {
 	    long start = System.currentTimeMillis();
 	    nextToCompare = choosingAlgorithm.getNextCandidates();
 	    long duration = System.currentTimeMillis() - start;
-	    log.debug("time needed to find next pair: {} ms", duration);
+	    log.trace("time needed to find next pair: {} ms", duration);
 
 	    // check for images that have been deleted in the meantime
 	    File key = nextToCompare.getKey();
 	    File value = nextToCompare.getValue();
 
-	    log.info("nextToCompare: key={}    value={}", key.getName(), value.getName());
+	    log.trace("nextToCompare: key={}    value={}", key.getName(), value.getName());
 
 	    bothExist = true;
 	    if (!key.exists()) {
@@ -276,7 +281,9 @@ public class ImageBattleFolder implements Serializable {
     }
 
     /**
-     * @param pFileToReset remove this file from the graph and then add it again to remove all edges to and from the file.
+     * @param pFileToReset
+     *            remove this file from the graph and then add it again to
+     *            remove all edges to and from the file.
      */
     void reset(File pFileToReset) {
 	graph2.removeVertex(pFileToReset);

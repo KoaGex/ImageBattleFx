@@ -7,12 +7,10 @@ import java.util.function.Supplier;
 import java.util.function.ToIntFunction;
 import java.util.stream.Stream;
 
-import javafx.beans.property.IntegerProperty;
-import javafx.beans.property.SimpleIntegerProperty;
-import javafx.util.Pair;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import javafx.util.Pair;
 
 public class WinnerOrientedCandidateChooser extends ACandidateChooser {
 	private static Logger log = LogManager.getLogger();
@@ -30,12 +28,10 @@ public class WinnerOrientedCandidateChooser extends ACandidateChooser {
 		Stream<Pair<File, File>> candidatesStream = super.getCandidateStream();
 		// List<Pair<File, File>> candidates = candidatesStream.collect(Collectors.toList());
 
-		IntegerProperty counter = new SimpleIntegerProperty(0);
 
 		// TODO don't first sort nodes and then create pairs, instead sort pairs by product of lossCount ?
 		// => prefer comparing pairs where both have lost only a few times or one has not yet lost
 		ToIntFunction<Pair<File, File>> pairToLossCountProduct = pair -> {
-			counter.set(counter.get() + 1);
 
 			File key = pair.getKey();
 			File value = pair.getValue();
@@ -66,7 +62,7 @@ public class WinnerOrientedCandidateChooser extends ACandidateChooser {
 		// choose lambda depending on number of candidates, variance should be ~ 1/3 of count
 		// large factor leads to preferring items in the front, low results are more likely
 		double lambda = Math.sqrt(3 / Math.sqrt(Double.valueOf(calculatedCandidateCount)));
-		log.debug("lambda: {}", lambda);
+		log.trace("lambda: {}", lambda);
 		Random rand = new Random(System.currentTimeMillis());
 		Supplier<Integer> expRandomSupplier = () -> {
 			Double expRand = Math.log(1 - rand.nextDouble()) / (-lambda);
@@ -75,7 +71,7 @@ public class WinnerOrientedCandidateChooser extends ACandidateChooser {
 		};
 		// Stream.generate(expRandomSupplier).limit(60).forEach(System.out::println); for testing the exponential distribution
 
-		log.debug("candidate pair count: {}   ", calculatedCandidateCount);
+		log.trace("candidate pair count: {}   ", calculatedCandidateCount);
 
 		Integer expRandomIndex = expRandomSupplier.get();
 		expRandomIndex = expRandomIndex - 1; // most likely value is 1, 0 never apperas but we need 0 to access the array
@@ -90,8 +86,7 @@ public class WinnerOrientedCandidateChooser extends ACandidateChooser {
 				.skip(expRandomIndex)//
 				.findFirst()//
 				.get();
-		log.info("exponentialRandomIndex: {}", expRandomIndex);
-		System.err.println(counter);
+		log.trace("exponentialRandomIndex: {}", expRandomIndex);
 
 		// graph2.edgeSet().forEach(System.err::println);
 

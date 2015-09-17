@@ -2,14 +2,13 @@ package org.imagebattle;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
-
-import javafx.util.Pair;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -18,6 +17,8 @@ import com.drew.imaging.ImageMetadataReader;
 import com.drew.imaging.ImageProcessingException;
 import com.drew.metadata.Metadata;
 import com.drew.metadata.exif.ExifSubIFDDirectory;
+
+import javafx.util.Pair;
 
 public abstract class ACandidateChooser {
 	private static Logger log = LogManager.getLogger();
@@ -47,22 +48,26 @@ public abstract class ACandidateChooser {
 		return doGetNextCandidates();
 	}
 
-	abstract Pair<File, File> doGetNextCandidates();
+	abstract Pair<File, File> doGetNextCandidates() throws BattleFinishedException;
 
-	Stream<Pair<File, File>> getCandidateStream() {
+	Stream<Pair<File, File>> getCandidateStream(Collection<File> vertexSubset) {
 
-		Set<File> vertexSet = graph2.vertexSet();
 		Stream<Pair<File, File>> candidatesStream = null;
 
 		// multiple choosing algorithms will need the candidates
-		candidatesStream = graph2.vertexSet().stream() //
-				.flatMap(from -> vertexSet.stream() //
+		candidatesStream = vertexSubset.stream() //
+				.flatMap(from -> vertexSubset.stream() //
 						.filter(to -> !graph2.containsEdge(from, to)) // TODO double check necessary? overwrite maybe
 						.filter(to -> !graph2.containsEdge(to, from)) //
 						.filter(to -> !Objects.equals(to, from)) // graph does not allow loops
 						.filter(to -> Comparator.comparing(File::getAbsolutePath).compare(to, from) > 0) // avoid having candidates a-b and b-a
 						.map(to -> new Pair<File, File>(from, to)));
 		return candidatesStream;
+	}
+
+	Stream<Pair<File, File>> getCandidateStream() {
+	    Set<File> vertexSet = graph2.vertexSet();
+	    return getCandidateStream(vertexSet);
 	}
 
 	final Date readExif(File pFile) {
