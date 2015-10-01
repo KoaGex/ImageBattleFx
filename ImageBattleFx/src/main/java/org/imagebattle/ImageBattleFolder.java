@@ -22,6 +22,16 @@ import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.imagebattle.chooser.ACandidateChooser;
+import org.imagebattle.chooser.BiSectionCandidateChooser;
+import org.imagebattle.chooser.ChronologicKoCandidateChooser;
+import org.imagebattle.chooser.DateDistanceCandidateChooser;
+import org.imagebattle.chooser.MaxNewEdgesCandidateChoser;
+import org.imagebattle.chooser.MinimumDegreeCandidateChooser;
+import org.imagebattle.chooser.RandomCandidateChooser;
+import org.imagebattle.chooser.RankingTopDownCandidateChooser;
+import org.imagebattle.chooser.SameWinLoseRationCandidateChooser;
+import org.imagebattle.chooser.WinnerOrientedCandidateChooser;
 
 import javafx.util.Pair;
 
@@ -77,7 +87,7 @@ public class ImageBattleFolder implements Serializable {
 
     }
 
-    static ImageBattleFolder readOrCreate(File chosenDirectory, String fileRegex) {
+    public static ImageBattleFolder readOrCreate(File chosenDirectory, String fileRegex) {
 	log.info("chosenDirectory: {}", chosenDirectory);
 	ImageBattleFolder result = null;
 
@@ -170,7 +180,7 @@ public class ImageBattleFolder implements Serializable {
 	return entry;
     }
 
-    List<ResultListEntry> getResultList() {
+    public List<ResultListEntry> getResultList() {
 
 	// Comparator<File> winnerFirstComparator =
 	// Comparator.comparing(graph2::outDegreeOf).reversed()
@@ -198,23 +208,23 @@ public class ImageBattleFolder implements Serializable {
 	return resultList;
     }
 
-    void makeDecision(File pWinner, File pLoser) {
+    public void makeDecision(File pWinner, File pLoser) {
 	graph2.addEdge(pWinner, pLoser);
 	humanDecisionCount++;
     }
 
-    Set<String> getChoosingAlgorithms() {
+    public Set<String> getChoosingAlgorithms() {
 	return choosingAlgorithms.keySet();
     }
 
-    void setChoosingAlgorithm(String pAlgorithmName) {
+    public void setChoosingAlgorithm(String pAlgorithmName) {
 	ACandidateChooser newAlgorithm = choosingAlgorithms.get(pAlgorithmName);
 	Objects.requireNonNull(newAlgorithm);
 	choosingAlgorithm = newAlgorithm;
 	log.info(pAlgorithmName);
     }
 
-    Pair<File, File> getNextToCompare() throws BattleFinishedException {
+    public Pair<File, File> getNextToCompare() throws BattleFinishedException {
 
 	Pair<File, File> nextToCompare = null;
 

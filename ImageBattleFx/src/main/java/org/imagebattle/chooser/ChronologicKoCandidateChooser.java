@@ -1,4 +1,4 @@
-package org.imagebattle;
+package org.imagebattle.chooser;
 
 import java.io.File;
 import java.util.Comparator;
@@ -10,6 +10,7 @@ import javafx.util.Pair;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.imagebattle.TransitiveDiGraph2;
 
 /**
  * This one is more oriented on viewing your pictures in the order they were taken.

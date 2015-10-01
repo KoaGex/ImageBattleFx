@@ -1,9 +1,11 @@
-package org.imagebattle;
+package org.imagebattle.chooser;
 
 import java.io.File;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import org.imagebattle.TransitiveDiGraph2;
 
 import javafx.util.Pair;
 

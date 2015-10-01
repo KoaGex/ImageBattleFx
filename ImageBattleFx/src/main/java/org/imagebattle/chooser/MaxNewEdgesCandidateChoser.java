@@ -1,4 +1,4 @@
-package org.imagebattle;
+package org.imagebattle.chooser;
 
 import java.io.File;
 import java.util.Comparator;
@@ -7,6 +7,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.naming.LimitExceededException;
+
+import org.imagebattle.TransitiveDiGraph2;
 
 import sun.java2d.pipe.PixelToParallelogramConverter;
 import javafx.util.Pair;

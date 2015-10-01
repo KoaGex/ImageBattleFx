@@ -1,4 +1,4 @@
-package org.imagebattle;
+package org.imagebattle.chooser;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,6 +12,8 @@ import java.util.stream.Stream;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.imagebattle.BattleFinishedException;
+import org.imagebattle.TransitiveDiGraph2;
 
 import com.drew.imaging.ImageMetadataReader;
 import com.drew.imaging.ImageProcessingException;
@@ -38,7 +40,7 @@ public abstract class ACandidateChooser {
 		return calculatedCandidateCount;
 	}
 
-	final Pair<File, File> getNextCandidates() throws BattleFinishedException {
+	public final Pair<File, File> getNextCandidates() throws BattleFinishedException {
 		int calculatedCandidateCount = getCalculatedCandidateCount();
 		
 		if( calculatedCandidateCount == 0) {

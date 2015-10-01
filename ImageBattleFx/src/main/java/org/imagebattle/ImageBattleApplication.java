@@ -24,6 +24,8 @@ import javafx.stage.Stage;
 public class ImageBattleApplication extends Application {
 
     private static String IMAGE_BATTLE = "Image Battle ";
+    
+    private static final String CSS_FILE = "style.css";
 
     // Issue list
 
@@ -137,7 +139,7 @@ public class ImageBattleApplication extends Application {
 	accelerators.put(new KeyCodeCombination(KeyCode.I), () -> imagesButton.getOnAction().handle(null));
 	accelerators.put(new KeyCodeCombination(KeyCode.M), () -> musicButton.getOnAction().handle(null));
 
-	battleKindChooserScene.getStylesheets().add("style.css");
+	battleKindChooserScene.getStylesheets().add(CSS_FILE);
 	_stage.setScene(battleKindChooserScene);
 	_stage.setResizable(false);
 	_stage.setTitle("MediaBattle");
@@ -153,6 +155,8 @@ public class ImageBattleApplication extends Application {
 
 	Consumer<File> confirmAction = file -> startBattle(file, ratingSceneCreator, fileRegex, rankingSceneCreator);
 	DirectoryChooserScene directoryChooserScene = DirectoryChooserScene.create(fileRegex, confirmAction);
+	
+	directoryChooserScene.getStylesheets().add(CSS_FILE);
 
 	Dimension screenSize = getScreenSize();
 	_stage.setWidth(screenSize.getWidth() -100);
@@ -194,11 +198,9 @@ public class ImageBattleApplication extends Application {
 
 	setStageLayout();
 
-	resultsScene.getStylesheets().add("style.css");
-	ratingScene.getStylesheets().add("style.css");
+	resultsScene.getStylesheets().add(CSS_FILE);
+	ratingScene.getStylesheets().add(CSS_FILE);
 
-	Application.getUserAgentStylesheet();
-	// Application.setUserAgentStylesheet(url);
     }
 
     static Dimension getScreenSize() {
