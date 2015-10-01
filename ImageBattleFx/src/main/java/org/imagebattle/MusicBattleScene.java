@@ -27,6 +27,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.util.Pair;
 
@@ -130,12 +131,8 @@ public class MusicBattleScene extends Scene {
 	Runnable maximizeLeft = fileSupplierToMaximize.apply(this::getFileLeft);
 	Runnable maximizeRight = fileSupplierToMaximize.apply(this::getFileRight);
 
-	// zoom buttons
-	Function<Runnable, Button> zoomButton = creatButton2.apply("zoom");
-	Button zoomLeft = zoomButton.apply(maximizeLeft);
-	Button zoomRight = zoomButton.apply(maximizeRight);
 
-	HBox hBoxLeft = new HBox(ignoreLeft, zoomLeft);
+	HBox hBoxLeft = new HBox(ignoreLeft);
 	StackPane.setAlignment(hBoxLeft, Pos.BOTTOM_LEFT);
 	hBoxLeft.setAlignment(Pos.BOTTOM_LEFT);
 	// this does not help: vBoxLeft.setMouseTransparent(true); // the vBox
@@ -147,7 +144,7 @@ public class MusicBattleScene extends Scene {
 					   // workaround
 	hBoxLeft.setMaxWidth(hBoxWidth);
 
-	HBox hBoxRight = new HBox(zoomRight, ignoreRight);
+	HBox hBoxRight = new HBox(ignoreRight);
 	StackPane.setAlignment(hBoxRight, Pos.BOTTOM_RIGHT);
 	hBoxRight.setAlignment(Pos.BOTTOM_RIGHT);
 	// this does not help: vBoxLeft.setMouseTransparent(true); // the vBox
@@ -172,6 +169,9 @@ public class MusicBattleScene extends Scene {
 
 	hBox.getChildren().add(imageViewLeft);
 	hBox.getChildren().add(imageViewRight);
+	HBox.setHgrow(imageViewLeft, Priority.ALWAYS);
+	HBox.setHgrow(imageViewRight, Priority.ALWAYS);
+	StackPane.setMargin(hBox, new Insets(80,15,15,15));
 
 	hBox.setAlignment(Pos.CENTER);
 	HBox.setMargin(imageViewLeft, new Insets(30));
