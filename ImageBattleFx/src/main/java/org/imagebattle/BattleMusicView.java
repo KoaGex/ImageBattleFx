@@ -117,6 +117,7 @@ public class BattleMusicView extends GridPane {
 	children.add(fileNameLabel);
 	setConstraints(fileNameLabel, 0, row++);
 	setHgrow(fileNameLabel, Priority.ALWAYS);
+	setColumnSpan(fileNameLabel, 2);
 
 	// artist
 	addRow(row++,new Label("Artist"),artistNameLabel);

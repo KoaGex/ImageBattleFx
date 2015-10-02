@@ -3,8 +3,9 @@ package org.imagebattle;
 import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.io.File;
+import java.net.URL;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -15,6 +16,7 @@ import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
@@ -29,8 +31,9 @@ public class ImageBattleApplication extends Application {
 
     // Issue list
 
-    // TODO use logo
-    // TODO use linear regression with pixelcount
+    // TODO recursive: include images of subfolders
+    // TODO after recursive: save everything central?
+    // TODO use deeplearning4j
     // TODO history for the last selected folders
     // TODO export the result list (txt, csv, html)
     // TODO battleScene: rotate images
@@ -41,7 +44,6 @@ public class ImageBattleApplication extends Application {
     // TODO use TreeSets to speed up choosers with sorting
     // TODO generic trying of the winner oriented chooser to optimize the
     // coefficients?
-    // TODO chooser: choose images with close to each other resolution (product)
     // TODO in battle scene show the current ranking place ?
     // TODO ranking diashow
     // TODO ranking: click image to fullscreen/diashow , then navigate with
@@ -70,11 +72,7 @@ public class ImageBattleApplication extends Application {
     // each other
     // TODO F11 hotkey for fullscreen ( keep that mode when switching )
     // TODO when rating is finished only show ranking without switch button
-    // TODO speed up choosing by selecting images that should be close to each
-    // other ( maybe look at pixel count), do this as a new Choosing algorithm
     // TODO JUnit
-    // TODO also show the worst pictures
-    // TODO try rewrite in Javascript? FirefoxOS app?
     // TODO rewrite using spark for a more centralized way => how to handle
     // multiple users rating the same images? each has own graph but candidate
     // choosing looks at others graphs
@@ -94,6 +92,11 @@ public class ImageBattleApplication extends Application {
     public void start(Stage pStage) throws Exception {
 	log.info("start");
 	_stage = pStage;
+	String iconFileName = "/imageBattle32.png";
+	URL resource = this.getClass().getResource(iconFileName);
+	System.err.println("grrrrr"+resource);
+	Image icon = new Image(resource.toString());
+	_stage.getIcons().add(icon);
 
 	/*
 	 * What happens? A Window shows with buttons that let the user choose
@@ -153,7 +156,7 @@ public class ImageBattleApplication extends Application {
 	    BiFunction<ImageBattleFolder, Runnable, Scene> ratingSceneCreator,
 	    BiFunction<ImageBattleFolder, Runnable, Scene> rankingSceneCreator) {
 
-	Consumer<File> confirmAction = file -> startBattle(file, ratingSceneCreator, fileRegex, rankingSceneCreator);
+	BiConsumer<File, Boolean> confirmAction = (file, recursive) -> startBattle(file, ratingSceneCreator, fileRegex, rankingSceneCreator, recursive);
 	DirectoryChooserScene directoryChooserScene = DirectoryChooserScene.create(fileRegex, confirmAction);
 	
 	directoryChooserScene.getStylesheets().add(CSS_FILE);
@@ -167,7 +170,7 @@ public class ImageBattleApplication extends Application {
     }
 
     private void startBattle(File dir, BiFunction<ImageBattleFolder, Runnable, Scene> ratingSceneCreator,
-	    String fileRegex, BiFunction<ImageBattleFolder, Runnable, Scene> rankingSceneCreator) {
+	    String fileRegex, BiFunction<ImageBattleFolder, Runnable, Scene> rankingSceneCreator, Boolean recursive) {
 
 	if (dir == null) {
 	    System.exit(1);
@@ -179,7 +182,7 @@ public class ImageBattleApplication extends Application {
 	// _stage.setFullScreen(true);
 
 	// gather images
-	imageBattleFolder = ImageBattleFolder.readOrCreate(dir, fileRegex);
+	imageBattleFolder = ImageBattleFolder.readOrCreate(dir, fileRegex, recursive);
 
 	ratingScene = ratingSceneCreator.apply(imageBattleFolder, this::showResultsScene);
 

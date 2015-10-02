@@ -41,6 +41,7 @@ import javafx.util.Pair;
  */
 public class ImageBattleFolder implements Serializable {
     static final String IMAGE_BATTLE_DAT = "imageBattle.dat";
+    static final String IMAGE_BATTLE_RECURSIVE_DAT = "imageBattleRecursive.dat";
 
     private static Logger log = LogManager.getLogger();
 
@@ -67,31 +68,59 @@ public class ImageBattleFolder implements Serializable {
      * 
      * @param chosenDirectory
      * @param fileRegex
+     * @param recursive
      */
-    private ImageBattleFolder(File chosenDirectory, String fileRegex) {
-	datFile = new File(chosenDirectory.getAbsolutePath() + File.separator + IMAGE_BATTLE_DAT);
+    private ImageBattleFolder(File chosenDirectory, String fileRegex, Boolean recursive) {
+	String datFileName = recursive ? IMAGE_BATTLE_RECURSIVE_DAT : IMAGE_BATTLE_DAT;
+	datFile = new File(chosenDirectory.getAbsolutePath() + File.separator + datFileName);
 
-	File[] allFiles = chosenDirectory.listFiles();
 	// TODO handle directory without images chosen
-	// TODO support more image formats, png.
-	// TODO possible to show moving gifs?
 	LinkedList<File> currentLevel = new LinkedList<>();
 	Pattern pattern = Pattern.compile(fileRegex);
-	for (File aFile : allFiles) {
-	    if (pattern.matcher(aFile.getName().toUpperCase()).matches()) {
-		currentLevel.add(aFile);
+
+	if (recursive) {
+	    LinkedList<File> queue = new LinkedList<>();
+	    queue.add(chosenDirectory);
+	    while (!queue.isEmpty()) {
+		File currentDirectory = queue.removeFirst();
+
+		File[] subdirectories = currentDirectory.listFiles();
+		List<File> asList = Arrays.asList(subdirectories);
+		Map<Boolean, List<File>> partition = asList.stream()
+			.collect(Collectors.partitioningBy(File::isDirectory));
+
+		// add directories to queue
+		queue.addAll(partition.get(Boolean.TRUE));
+
+		// add matching files to current level
+		for (File aFile : partition.get(Boolean.FALSE)) {
+		    if (pattern.matcher(aFile.getName().toUpperCase()).matches()) {
+			currentLevel.add(aFile);
+		    }
+		}
+
+	    }
+
+	} else {
+	    File[] allFiles = chosenDirectory.listFiles();
+	    for (File aFile : allFiles) {
+		if (pattern.matcher(aFile.getName().toUpperCase()).matches()) {
+		    currentLevel.add(aFile);
+		}
 	    }
 	}
+
 	log.debug("file count:" + currentLevel.size());
 	graph2 = new TransitiveDiGraph2(currentLevel);
 
     }
 
-    public static ImageBattleFolder readOrCreate(File chosenDirectory, String fileRegex) {
+    public static ImageBattleFolder readOrCreate(File chosenDirectory, String fileRegex, Boolean recursive) {
 	log.info("chosenDirectory: {}", chosenDirectory);
 	ImageBattleFolder result = null;
 
-	File datFile = new File(chosenDirectory.getAbsolutePath() + File.separator + IMAGE_BATTLE_DAT);
+	String datFileName = recursive ? IMAGE_BATTLE_RECURSIVE_DAT : IMAGE_BATTLE_DAT;
+	File datFile = new File(chosenDirectory.getAbsolutePath() + File.separator + datFileName);
 	if (datFile.exists()) {
 	    ObjectInputStream ois;
 	    try {
@@ -109,7 +138,7 @@ public class ImageBattleFolder implements Serializable {
 
 	if (result == null) {
 	    log.info("create new");
-	    result = new ImageBattleFolder(chosenDirectory, fileRegex);
+	    result = new ImageBattleFolder(chosenDirectory, fileRegex, recursive);
 	} else {
 	    // search for new images and add them
 	    List<File> currentFileArray = Arrays.asList(chosenDirectory.listFiles());
@@ -164,9 +193,10 @@ public class ImageBattleFolder implements Serializable {
 	newChoosingAlorithms.put("RankingTopDown", new RankingTopDownCandidateChooser(result.graph2));
 	newChoosingAlorithms.put("BiSection", new BiSectionCandidateChooser(result.graph2));
 	newChoosingAlorithms.put("MinimumDegree", new MinimumDegreeCandidateChooser(result.graph2));
-	newChoosingAlorithms.put("SameWinLoseRatio", new SameWinLoseRationCandidateChooser(result.graph2));
+	SameWinLoseRationCandidateChooser sameWinLoseRatio = new SameWinLoseRationCandidateChooser(result.graph2);
+	newChoosingAlorithms.put("SameWinLoseRatio", sameWinLoseRatio);
 
-	result.choosingAlgorithm = winnerOriented;
+	result.choosingAlgorithm = sameWinLoseRatio;
 
 	return result;
     }

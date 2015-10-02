@@ -13,7 +13,7 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -26,6 +26,7 @@ import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.MultipleSelectionModel;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.ScrollPane.ScrollBarPolicy;
@@ -35,17 +36,18 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.HBox;
 
 public class DirectoryChooserScene extends Scene {
     private static Logger log = LogManager.getLogger();
     TreeView<DirectoryChooserFile> treeView = new TreeView<>();
 
-    static DirectoryChooserScene create(String fileRegex, Consumer<File> confirmAction) {
+    static DirectoryChooserScene create(String fileRegex, BiConsumer<File, Boolean> confirmAction) {
 	BorderPane borderPane = new BorderPane();
 	return new DirectoryChooserScene(borderPane, fileRegex, confirmAction);
     }
 
-    public DirectoryChooserScene(BorderPane borderPane, String fileRegex, Consumer<File> confirmAction) {
+    public DirectoryChooserScene(BorderPane borderPane, String fileRegex, BiConsumer<File, Boolean> confirmAction) {
 	super(borderPane);
 
 	TreeItem<DirectoryChooserFile> rootItem = buildDirectoryTree(fileRegex);
@@ -63,13 +65,19 @@ public class DirectoryChooserScene extends Scene {
 
 	Button okButton = new Button("ok");
 	okButton.setDefaultButton(true);
+
+	CheckBox recursiveCheckbox = new CheckBox("Inlude files in subdirectories");
+
 	okButton.setOnAction(event -> {
 	    MultipleSelectionModel<TreeItem<DirectoryChooserFile>> selectionModel = treeView.getSelectionModel();
 	    DirectoryChooserFile chosenDirectory = selectionModel.getSelectedItem().getValue();
 
-	    confirmAction.accept(chosenDirectory);
+	    confirmAction.accept(chosenDirectory, recursiveCheckbox.isSelected());
 	});
-	borderPane.setBottom(okButton);
+	
+
+	
+	borderPane.setBottom(new HBox(okButton, recursiveCheckbox) );
 
 	treeView.getSelectionModel().selectedItemProperty().addListener((a, b, newSelected) -> {
 	    System.out.println(newSelected);

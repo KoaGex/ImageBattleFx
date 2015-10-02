@@ -1,4 +1,9 @@
 /*   https://docs.oracle.com/javase/8/javafx/api/javafx/scene/doc-files/cssref.html */
+.root {
+	-fx-base: #f4f4f4;
+    -fx-body-color: derive(-fx-color,-8%);
+    -fx-outer-border: derive(-fx-color,-33%);
+}
 .place-label {
 	-fx-padding: 20;
 	-fx-background-radius: 12;
@@ -9,6 +14,11 @@
 	-fx-font: 24px "Arial";
 	-fx-font-size: 20px;
 	-fx-font-family: sans-serif;
+}
+
+.fixed {
+	-fx-border-width: 1;
+	-fx-background-color: blue;
 }
 
 .resolution-label {
@@ -24,12 +34,33 @@
 }
 
 .button {
+    -fx-background-color:  -fx-body-color;
+    -fx-border-color: -fx-outer-border;
+    -fx-border-width: 1;
 	-fx-alignment: bottom-right;
 	-fx-padding: 5;
-	-fx-opacity: 0.65;
 	-fx-font: 20px "Arial";
+	/* 
+    -fx-background-insets: 0 0 -1 0, 0, 1, 2;
+    -fx-background-radius: 5, 5, 4, 3;
+    */
+    -fx-background-insets: 0,0,0,0;
+    -fx-background-radius: 0,0,0,0;
+}
+
+.button:hover {
+	-fx-cursor: hand;
+}
+
+.transparent-button {
+	-fx-opacity: 0.65;
 }
 
 .menu-bar {
 	-fx-opacity: 0.75;
+}
+
+.battle-music-view .label {
+	-fx-padding: 10;
+	-fx-font: 16px "Arial";
 }

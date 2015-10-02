@@ -22,6 +22,7 @@ public class SameWinLoseRationCandidateChooser extends ACandidateChooser {
 
     @Override
     Pair<File, File> doGetNextCandidates() throws  BattleFinishedException {
+	log.debug("start");
 
 	Pair<File, File> result = graph2.vertexSet()//
 		.stream()//
@@ -53,6 +54,9 @@ public class SameWinLoseRationCandidateChooser extends ACandidateChooser {
 
 	// TODO what when the biggest has only images that are already compared
 	// to each other? can that happen at all?
+	
+	// TODO with 5000 files this takes 5 seconds. improve!
+	log.debug("end, result:{}", result);
 
 	return result;
     }

@@ -23,7 +23,8 @@ public class CandidateChooserSimulation {
 	imageBattleDat.delete();
 
 	String regex = ".*\\.(BMP|GIF|JPEG|JPG|PNG)";
-	ImageBattleFolder folder = ImageBattleFolder.readOrCreate(funPicsDir, regex);
+	boolean recursive = false;
+	ImageBattleFolder folder = ImageBattleFolder.readOrCreate(funPicsDir, regex, recursive);
 	Set<String> choosingAlgorithms = folder.getChoosingAlgorithms();
 
 	List<File> files = folder.getResultList().stream().map(entry -> entry.file).collect(Collectors.toList());

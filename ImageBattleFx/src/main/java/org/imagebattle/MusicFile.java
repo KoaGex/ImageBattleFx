@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.function.Function;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.farng.mp3.MP3File;
 import org.farng.mp3.TagException;
 import org.farng.mp3.id3.AbstractID3v2;
@@ -17,6 +19,7 @@ import org.farng.mp3.id3.ID3v1;
  *
  */
 public class MusicFile extends MP3File {
+    private static Logger log = LogManager.getLogger();
     private static final String UNKNOWN = "";
 
     /**
@@ -26,7 +29,8 @@ public class MusicFile extends MP3File {
 	try {
 	    return new MusicFile(file);
 	} catch (IOException | TagException e) {
-	    throw new RuntimeException(e);
+	    log.warn("file:"+ file.getAbsolutePath() , e);
+	    return new MusicFile();
 	}
     }
 
@@ -35,6 +39,9 @@ public class MusicFile extends MP3File {
      */
     private MusicFile(File file) throws IOException, TagException {
 	super(file);
+    }
+    
+    private MusicFile() {
     }
 
     String getAlbum() {
