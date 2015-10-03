@@ -118,4 +118,8 @@ public class TransitiveDiGraph2 extends SimpleDirectedGraph<File, DefaultEdge> {
     public Integer getWinLoseDifference(File file) {
 	return outDegreeOf(file) - inDegreeOf(file);
     }
+
+    public boolean containsAnyEdge(File v1, File v2) {
+	return containsEdge(v1, v2) || containsEdge(v2, v1);
+    }
 }
