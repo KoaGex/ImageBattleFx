@@ -28,7 +28,7 @@ public class MusicFile extends MP3File {
     static MusicFile create(File file) {
 	try {
 	    return new MusicFile(file);
-	} catch (IOException | TagException e) {
+	} catch (Exception e) {
 	    log.warn("file:"+ file.getAbsolutePath() , e);
 	    return new MusicFile();
 	}
