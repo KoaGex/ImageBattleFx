@@ -3,12 +3,14 @@ package org.imagebattle;
 import java.io.File;
 import java.net.URI;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javafx.application.Platform;
 import javafx.collections.ObservableList;
+import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -101,6 +103,11 @@ public class BattleMusicView extends GridPane {
 	});
 	
 	
+
+	// Margin for buttons
+	Insets buttonInsets = new Insets(5);
+	Stream.of(chooseButton, playButton, stopButton)//
+	.forEach(button->setMargin(button, buttonInsets));
 
 	int row = 0;
 	addRow(row++, playButton, stopButton);
