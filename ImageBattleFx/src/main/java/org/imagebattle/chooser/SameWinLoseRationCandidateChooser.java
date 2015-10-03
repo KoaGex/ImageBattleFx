@@ -3,6 +3,9 @@ package org.imagebattle.chooser;
 import java.io.File;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Collectors;
 
@@ -21,12 +24,16 @@ public class SameWinLoseRationCandidateChooser extends ACandidateChooser {
     }
 
     @Override
-    Pair<File, File> doGetNextCandidates() throws  BattleFinishedException {
+    Pair<File, File> doGetNextCandidates() throws BattleFinishedException {
 	log.debug("start");
 
-	Pair<File, File> result = graph2.vertexSet()//
+	Map<Integer, List<File>> differenceMap = graph2.vertexSet()//
 		.stream()//
-		.collect(Collectors.groupingBy(graph2::getWinLoseDifference))//
+		.collect(Collectors.groupingBy(graph2::getWinLoseDifference));
+
+	log.debug("number of groups: {}", differenceMap.size());
+
+	Optional<List<File>> biggestGroup = differenceMap//
 		.values()//
 		.stream()//
 		.max(Comparator.comparing(List::size))//
@@ -34,31 +41,59 @@ public class SameWinLoseRationCandidateChooser extends ACandidateChooser {
 		    Integer difference = graph2.getWinLoseDifference(list.get(0));
 		    log.debug("list size: {}  difference: {}", list.size(), difference);
 		    return list;
-		})//
-		.map(this::getCandidateStream)//
-		.orElseThrow(IllegalStateException::new)//
-		// TODO randomize
-		.collect(Collectors.groupingBy(a -> 1))//
-		.entrySet().stream()//
-//		.peek(System.err::println)//
-		.findAny()//
-		.map(entry -> {
-		    List<Pair<File, File>> list = entry.getValue();
-		    int size = list.size();
-		    Random random = new Random();
-		    int index = random.ints(0, size).findFirst().getAsInt();
-		    log.debug(index + "/" + size);
-		    return list.get(index);
-		})//
-		.orElseThrow(BattleFinishedException::new);//
+		});
+
+	/*
+	 * When group is big, candidate pair lits is veeery long => before
+	 * building it try some times to find any.
+	 */
+	List<File> biggestGroupList = biggestGroup.get();
+	Pair<File, File> result = null;
+
+	for (int i = 0; i < biggestGroupList.size(); i++) {
+	    File from = getRandomElement(biggestGroupList);
+	    File to = getRandomElement(biggestGroupList);
+	    if (!Objects.equals(to, from) && !graph2.containsAnyEdge(from, to)) {
+		result = new Pair<File, File>(from, to);
+		log.debug("guess success at try: {}", i);
+		break;
+	    }
+	}
+
+	if (result == null) {
+	    Map<Integer, List<Pair<File, File>>> countMap = biggestGroup//
+		    .map(this::getCandidateStream)//
+		    .orElseThrow(IllegalStateException::new)//
+		    // TODO randomize
+		    .collect(Collectors.groupingBy(a -> 1));
+
+	    log.debug("candidate map size: {}", countMap.size());
+
+	    result = countMap//
+		    .entrySet().stream()//
+		    // .peek(System.err::println)//
+		    .findAny()//
+		    .map(entry -> {
+			List<Pair<File, File>> list = entry.getValue();
+			return getRandomElement(list);
+		    })//
+		    .orElseThrow(BattleFinishedException::new);//
+	}
 
 	// TODO what when the biggest has only images that are already compared
 	// to each other? can that happen at all?
-	
-	// TODO with 5000 files this takes 5 seconds. improve!
+
 	log.debug("end, result:{}", result);
 
 	return result;
+    }
+
+    private <T> T getRandomElement(List<T> list) {
+	int size = list.size();
+	Random random = new Random();
+	int index = random.nextInt(size);
+	log.debug(index + "/" + size);
+	return list.get(index);
     }
 
 }
