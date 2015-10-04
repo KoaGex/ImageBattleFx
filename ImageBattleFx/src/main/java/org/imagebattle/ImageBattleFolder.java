@@ -140,6 +140,7 @@ public class ImageBattleFolder implements Serializable {
 	    log.info("create new");
 	    result = new ImageBattleFolder(chosenDirectory, fileRegex, recursive);
 	} else {
+
 	    // search for new images and add them
 	    List<File> currentFileArray = Arrays.asList(chosenDirectory.listFiles());
 	    List<File> currentFiles = new LinkedList<>(currentFileArray);
@@ -174,6 +175,16 @@ public class ImageBattleFolder implements Serializable {
 	    });
 
 	}
+
+	// Merge in vertexes and edges from CentralStorage.
+	TransitiveDiGraph2 readGraph = CentralStorage.read(chosenDirectory, fileRegex, recursive);
+	readGraph.vertexSet().forEach(result.graph2::addVertex);
+	TransitiveDiGraph2 resultGraph = result.graph2;
+	readGraph.edgeSet().forEach(edge -> {
+	    File edgeSource = readGraph.getEdgeSource(edge);
+	    File edgeTarget = readGraph.getEdgeTarget(edge);
+	    resultGraph.addEdge(edgeSource, edgeTarget);
+	});
 
 	if (result.ignoredFiles == null) {
 	    result.ignoredFiles = new HashSet<>();
@@ -298,6 +309,8 @@ public class ImageBattleFolder implements Serializable {
 	} catch (Exception e) {
 	    e.printStackTrace();
 	}
+
+	CentralStorage.save(graph2, ignoredFiles);
     }
 
     /**

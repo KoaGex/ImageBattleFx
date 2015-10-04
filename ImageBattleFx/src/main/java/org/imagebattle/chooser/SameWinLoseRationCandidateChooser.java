@@ -64,7 +64,6 @@ public class SameWinLoseRationCandidateChooser extends ACandidateChooser {
 	    Map<Integer, List<Pair<File, File>>> countMap = biggestGroup//
 		    .map(this::getCandidateStream)//
 		    .orElseThrow(IllegalStateException::new)//
-		    // TODO randomize
 		    .collect(Collectors.groupingBy(a -> 1));
 
 	    log.debug("candidate map size: {}", countMap.size());

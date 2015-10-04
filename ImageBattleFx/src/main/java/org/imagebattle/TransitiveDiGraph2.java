@@ -26,6 +26,9 @@ public class TransitiveDiGraph2 extends SimpleDirectedGraph<File, DefaultEdge> {
 	super(DefaultEdge.class);
 	pNodes.forEach(this::addVertex);
     }
+    public TransitiveDiGraph2() {
+	super(DefaultEdge.class);
+    }
 
     /**
      * 

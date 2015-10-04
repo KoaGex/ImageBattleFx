@@ -31,8 +31,7 @@ public class ImageBattleApplication extends Application {
 
     // Issue list
 
-    // TODO recursive: include images of subfolders
-    // TODO after recursive: save everything central?
+    // TODO create hash values of image content to uniquely identify them after moving.
     // TODO use deeplearning4j
     // TODO history for the last selected folders
     // TODO export the result list (txt, csv, html)
