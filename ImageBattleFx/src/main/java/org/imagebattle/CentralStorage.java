@@ -15,6 +15,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -31,15 +32,23 @@ import org.apache.logging.log4j.Logger;
  *         simpler: just zip.
  *
  */
-public class CentralStorage {
+class CentralStorage {
+
     private static Logger log = LogManager.getLogger();
 
+    private static final String GRAPH_FILE = "mediaBattleGraph.csv";
+    private static final String IGNORE_FILE = "mediaBattleIgnore.csv";
+
     static void save(TransitiveDiGraph2 graph, Set<File> ignoredFiles) {
-	// TODO idea: use observable list or observable set? then only add
-	// changes to the file.
-	String userHome = System.getProperty("user.home");
-	File userHomeDirectory = new File(userHome);
-	File graphCsv = new File(userHomeDirectory, "mediaBattleGraph.csv");
+	/*
+	 * Idea: use observable list or observable set? then only add changes to
+	 * the file.
+	 * 
+	 * Why not? Unecessary optimisation. Think about it again when
+	 * performance issues arise.
+	 */
+
+	File graphCsv = getGraphFile();
 
 	Set<String> oldFileContent = readGraphCsv();
 
@@ -55,16 +64,27 @@ public class CentralStorage {
 		.sorted()//
 		.collect(Collectors.joining("\n"));
 
+	writeStringIntoFile(graphCsvContent, graphCsv);
+
+	saveIgnoreFile(ignoredFiles);
+    }
+
+    /**
+     * @param newContent
+     *            Replaces the old content of the file.
+     * @param targetFile
+     *            File will be created if necessary.
+     */
+    private static void writeStringIntoFile(String newContent, File targetFile) {
 	// Try-with automatically closes it which should also trigger flush().
-	try (FileWriter fileWriter = new FileWriter(graphCsv)) {
-	    fileWriter.write(graphCsvContent);
+	try (FileWriter fileWriter = new FileWriter(targetFile)) {
+	    fileWriter.write(newContent);
 	} catch (IOException e) {
 	    throw new UncheckedIOException(e);
 	}
-
     }
 
-    static TransitiveDiGraph2 read(File chosenDirectory, String fileRegex, Boolean recursive) {
+    static TransitiveDiGraph2 readGraph(File chosenDirectory, String fileRegex, Boolean recursive) {
 
 	Predicate<File> containedRecursively = file -> {
 	    return file.getAbsolutePath().startsWith(chosenDirectory.getAbsolutePath());
@@ -105,26 +125,85 @@ public class CentralStorage {
 	return graph;
     }
 
-    private static Set<String> readGraphCsv() {
+    /**
+     * TODO To remove files from the ignore list a new method will be added.
+     * 
+     * @param ignoredFiles
+     *            Each of the given files should be ignored in all coming media
+     *            battles.
+     */
+    private static void saveIgnoreFile(Set<File> ignoredFiles) {
+	File ignoreFile = getIgnoreFile();
+	Set<String> oldIgnoredFiles = readFile(ignoreFile);
 
+	Stream<String> currentIgnoredAbsolutePathsStream = ignoredFiles.stream().map(File::getAbsolutePath);
+
+	String newIgnoredFiles = Stream.concat(oldIgnoredFiles.stream(), currentIgnoredAbsolutePathsStream)//
+		.distinct()//
+		.sorted()//
+		.collect(Collectors.joining("\n"));
+
+	log.debug(newIgnoredFiles);
+	writeStringIntoFile(newIgnoredFiles, ignoreFile);
+
+    }
+
+    static Set<File> readIgnoreFile(File chosenDirectory, String fileRegex, Boolean recursive) {
+	File file = getIgnoreFile();
+	Set<String> readFile = readFile(file);
+	return readFile.stream().map(File::new).collect(Collectors.toSet());
+    }
+
+    private static File getIgnoreFile() {
+	String child = IGNORE_FILE;
+	File file = getFile(child);
+	return file;
+    }
+
+    private static File getFile(String fileName) {
 	String userHome = System.getProperty("user.home");
 	File userHomeDirectory = new File(userHome);
-	File graphCsv = new File(userHomeDirectory, "mediaBattleGraph.csv");
+	File file = new File(userHomeDirectory, fileName);
+	return file;
+    }
 
+    private static File getGraphFile() {
+	String child = GRAPH_FILE;
+	return getFile(child);
+    }
+
+    private static Set<String> readGraphCsv() {
+
+	File graphCsv = getGraphFile();
+
+	return readFile(graphCsv);
+
+    }
+
+    private static Set<String> readFile(File file) {
 	Set<String> oldFileContent = new HashSet<>();
-	try (BufferedReader bufferedReader = new BufferedReader(new FileReader(graphCsv))) {
 
-	    boolean keepReading = true;
-	    while (keepReading) {
-		String readLine = bufferedReader.readLine();
-		if (readLine == null) {
-		    keepReading = false;
-		} else {
-		    oldFileContent.add(readLine);
+	try {
+	    if (!file.exists()) {
+		boolean createSucces = file.createNewFile();
+		log.info("Needed to create file {} and it succeeded: {}", file, createSucces);
+	    }
+
+	    try (BufferedReader bufferedReader = new BufferedReader(new FileReader(file))) {
+
+		boolean keepReading = true;
+		while (keepReading) {
+		    String readLine = bufferedReader.readLine();
+		    if (readLine == null) {
+			keepReading = false;
+		    } else {
+			oldFileContent.add(readLine);
+		    }
 		}
 	    }
 
 	} catch (IOException e1) {
+	    log.catching(Level.WARN, e1);
 	    throw new UncheckedIOException(e1);
 	}
 	return oldFileContent;

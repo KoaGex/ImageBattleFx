@@ -177,7 +177,7 @@ public class ImageBattleFolder implements Serializable {
 	}
 
 	// Merge in vertexes and edges from CentralStorage.
-	TransitiveDiGraph2 readGraph = CentralStorage.read(chosenDirectory, fileRegex, recursive);
+	TransitiveDiGraph2 readGraph = CentralStorage.readGraph(chosenDirectory, fileRegex, recursive);
 	readGraph.vertexSet().forEach(result.graph2::addVertex);
 	TransitiveDiGraph2 resultGraph = result.graph2;
 	readGraph.edgeSet().forEach(edge -> {
@@ -189,6 +189,10 @@ public class ImageBattleFolder implements Serializable {
 	if (result.ignoredFiles == null) {
 	    result.ignoredFiles = new HashSet<>();
 	}
+
+	// Merge in ignored files from CentralStorage.
+	Set<File> readIgnoreFile = CentralStorage.readIgnoreFile(chosenDirectory, fileRegex, recursive);
+	result.ignoredFiles.addAll(readIgnoreFile);
 
 	// choosing algorithms
 	if (result.choosingAlgorithms == null) {
