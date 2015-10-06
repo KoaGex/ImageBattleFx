@@ -18,8 +18,8 @@ import org.farng.mp3.id3.ID3v1;
  * @author KoaGex
  *
  */
-public class MusicFile extends MP3File {
-    private static Logger log = LogManager.getLogger();
+final class MusicFile extends MP3File {
+    private static final Logger log = LogManager.getLogger();
     private static final String UNKNOWN = "";
 
     /**
@@ -29,7 +29,9 @@ public class MusicFile extends MP3File {
 	try {
 	    return new MusicFile(file);
 	} catch (Exception e) {
-	    log.warn("file:"+ file.getAbsolutePath() , e);
+	    if (log.isWarnEnabled()) {
+		log.warn("file:" + file.getAbsolutePath(), e);
+	    }
 	    return new MusicFile();
 	}
     }
@@ -40,7 +42,7 @@ public class MusicFile extends MP3File {
     private MusicFile(File file) throws IOException, TagException {
 	super(file);
     }
-    
+
     private MusicFile() {
     }
 

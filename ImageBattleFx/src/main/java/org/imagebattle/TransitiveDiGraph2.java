@@ -22,10 +22,11 @@ public class TransitiveDiGraph2 extends SimpleDirectedGraph<File, DefaultEdge> {
      * 
      * @param pNodes
      */
-    public TransitiveDiGraph2(List<File> pNodes) {
+    TransitiveDiGraph2(List<File> pNodes) {
 	super(DefaultEdge.class);
 	pNodes.forEach(this::addVertex);
     }
+
     public TransitiveDiGraph2() {
 	super(DefaultEdge.class);
     }
@@ -48,12 +49,11 @@ public class TransitiveDiGraph2 extends SimpleDirectedGraph<File, DefaultEdge> {
 	    if (edgeExists) {
 		log.trace("edge already set:" + from.getName() + " -> " + to.getName());
 	    } else {
-		log.trace("add edge " + from.getName() + " -> " + to.getName());
 		// use super. without it would quickly result in an infinite
 		// recursive loop
-		DefaultEdge result2 = super.addEdge(from, to); // TODO use the
-							       // return value
-							       // ?!
+		DefaultEdge newEdge = super.addEdge(from, to);
+		// TODO use the return value ?!
+		log.trace("add edge {} -> {} . newEdge: {}", from.getName(), to.getName(), newEdge);
 		// result = (result == null) ? result2 : result; TODO after
 		// adding use getEdge ?
 	    }

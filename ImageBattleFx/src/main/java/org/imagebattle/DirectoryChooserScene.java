@@ -38,16 +38,16 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 
-public class DirectoryChooserScene extends Scene {
+final class DirectoryChooserScene extends Scene {
     private static Logger log = LogManager.getLogger();
-    TreeView<DirectoryChooserFile> treeView = new TreeView<>();
+    private TreeView<DirectoryChooserFile> treeView = new TreeView<>();
 
     static DirectoryChooserScene create(String fileRegex, BiConsumer<File, Boolean> confirmAction) {
 	BorderPane borderPane = new BorderPane();
 	return new DirectoryChooserScene(borderPane, fileRegex, confirmAction);
     }
 
-    public DirectoryChooserScene(BorderPane borderPane, String fileRegex, BiConsumer<File, Boolean> confirmAction) {
+    private DirectoryChooserScene(BorderPane borderPane, String fileRegex, BiConsumer<File, Boolean> confirmAction) {
 	super(borderPane);
 
 	TreeItem<DirectoryChooserFile> rootItem = buildDirectoryTree(fileRegex);
@@ -74,10 +74,8 @@ public class DirectoryChooserScene extends Scene {
 
 	    confirmAction.accept(chosenDirectory, recursiveCheckbox.isSelected());
 	});
-	
 
-	
-	borderPane.setBottom(new HBox(okButton, recursiveCheckbox) );
+	borderPane.setBottom(new HBox(okButton, recursiveCheckbox));
 
 	treeView.getSelectionModel().selectedItemProperty().addListener((a, b, newSelected) -> {
 	    System.out.println(newSelected);

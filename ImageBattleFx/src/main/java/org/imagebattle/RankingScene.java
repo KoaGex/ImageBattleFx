@@ -42,7 +42,7 @@ import javafx.scene.text.TextFlow;
  * @author Besitzer
  *
  */
-public class RankingScene extends Scene {
+class RankingScene extends Scene {
     private static Logger log = LogManager.getLogger();
 
     private ObservableList<Node> resultsVboxChildren;

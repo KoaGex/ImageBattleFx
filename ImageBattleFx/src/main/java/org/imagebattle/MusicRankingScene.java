@@ -1,11 +1,14 @@
 package org.imagebattle;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.function.Function;
 
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.farng.mp3.MP3File;
+import org.farng.mp3.TagException;
 
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.ObservableList;
@@ -18,12 +21,12 @@ import javafx.scene.control.TableView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.StackPane;
 
-public class MusicRankingScene extends Scene {
+final class MusicRankingScene extends Scene {
     private static Logger log = LogManager.getLogger();
 
     private final Runnable refresh;
 
-    public MusicRankingScene(StackPane switchSceneStackPane, ImageBattleFolder folder, Runnable switchSceneAction) {
+    private MusicRankingScene(StackPane switchSceneStackPane, ImageBattleFolder folder, Runnable switchSceneAction) {
 	super(switchSceneStackPane);
 	List<ResultListEntry> resultList = folder.getResultList();
 
@@ -84,8 +87,8 @@ public class MusicRankingScene extends Scene {
 		    return mp3File.getID3v2Tag().getLeadArtist();
 		}
 		return "";
-	    } catch (Exception e) {
-		e.printStackTrace();
+	    } catch (IOException | TagException e) {
+		log.catching(Level.DEBUG, e);
 		return "";
 	    }
 	});
@@ -115,7 +118,8 @@ public class MusicRankingScene extends Scene {
 	refresh.run();
     }
 
-    TableColumn<ResultListEntry, String> createColumn(String columnTitle, Function<ResultListEntry, String> function) {
+    private TableColumn<ResultListEntry, String> createColumn(String columnTitle,
+	    Function<ResultListEntry, String> function) {
 	TableColumn<ResultListEntry, String> tableColumn = new TableColumn<>(columnTitle);
 	tableColumn.setCellValueFactory(x -> {
 	    ResultListEntry resultListEntry = x.getValue();

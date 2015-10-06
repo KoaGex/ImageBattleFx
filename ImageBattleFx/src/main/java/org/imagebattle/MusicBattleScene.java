@@ -31,7 +31,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.util.Pair;
 
-public class MusicBattleScene extends Scene {
+final class MusicBattleScene extends Scene {
 
     private static Logger log = LogManager.getLogger();
 
@@ -43,9 +43,12 @@ public class MusicBattleScene extends Scene {
 
     private final DoubleProperty progressProperty;
 
-    public MusicBattleScene(StackPane switchSceneStackPane, ImageBattleFolder folder, Runnable switchSceneAction) {
+    private Runnable switchSceneAction;
+
+    private MusicBattleScene(StackPane switchSceneStackPane, ImageBattleFolder folder, Runnable switchSceneAction) {
 	super(switchSceneStackPane);
 	imageBattleFolder = folder;
+	this.switchSceneAction = switchSceneAction;
 
 	HBox hBox = new HBox();
 
@@ -131,7 +134,6 @@ public class MusicBattleScene extends Scene {
 	Runnable maximizeLeft = fileSupplierToMaximize.apply(this::getFileLeft);
 	Runnable maximizeRight = fileSupplierToMaximize.apply(this::getFileRight);
 
-
 	HBox hBoxLeft = new HBox(ignoreLeft);
 	StackPane.setAlignment(hBoxLeft, Pos.BOTTOM_LEFT);
 	hBoxLeft.setAlignment(Pos.BOTTOM_LEFT);
@@ -171,13 +173,11 @@ public class MusicBattleScene extends Scene {
 	hBox.getChildren().add(imageViewRight);
 	HBox.setHgrow(imageViewLeft, Priority.ALWAYS);
 	HBox.setHgrow(imageViewRight, Priority.ALWAYS);
-	StackPane.setMargin(hBox, new Insets(80,15,15,15));
+	StackPane.setMargin(hBox, new Insets(80, 15, 15, 15));
 
 	hBox.setAlignment(Pos.CENTER);
 	HBox.setMargin(imageViewLeft, new Insets(30));
 	HBox.setMargin(imageViewRight, new Insets(30));
-
-
 
 	setOnKeyPressed(keyEvent -> {
 
@@ -229,9 +229,6 @@ public class MusicBattleScene extends Scene {
 
 	    // persist
 	    imageBattleFolder.save();
-	    int humanDecisionCount = imageBattleFolder.getHumanDecisionCount();
-	    log.trace("decisions made so far:" + humanDecisionCount);
-
 	}
 
 	double progress = imageBattleFolder.getProgress();
@@ -247,8 +244,8 @@ public class MusicBattleScene extends Scene {
 	    imageViewRight.setNewFile(fileRight);
 
 	} catch (BattleFinishedException e) {
-	    // TODO switch the scene and don't let the user come back
-	    throw new RuntimeException(e);
+	    imageBattleFolder.setFinished(true);
+	    switchSceneAction.run();
 	} catch (NoSuchElementException e) {
 	    e.printStackTrace();
 	}

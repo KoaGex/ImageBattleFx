@@ -21,7 +21,7 @@ import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
 import javafx.util.Duration;
 
-public class BattleMusicView extends GridPane {
+final class BattleMusicView extends GridPane {
     private static Logger log = LogManager.getLogger();
 
     private MediaPlayer player;
@@ -30,8 +30,8 @@ public class BattleMusicView extends GridPane {
 
     private Consumer<File> fileSetter;
 
-    public BattleMusicView(Runnable chooseAction) {
-	
+    BattleMusicView(Runnable chooseAction) {
+
 	getStyleClass().add("battle-music-view");
 
 	slider = new Slider();
@@ -101,13 +101,11 @@ public class BattleMusicView extends GridPane {
 	    }
 
 	});
-	
-	
 
 	// Margin for buttons
 	Insets buttonInsets = new Insets(5);
 	Stream.of(chooseButton, playButton, stopButton)//
-	.forEach(button->setMargin(button, buttonInsets));
+		.forEach(button -> setMargin(button, buttonInsets));
 
 	int row = 0;
 	addRow(row++, playButton, stopButton);
@@ -127,15 +125,15 @@ public class BattleMusicView extends GridPane {
 	setColumnSpan(fileNameLabel, 2);
 
 	// artist
-	addRow(row++,new Label("Artist"),artistNameLabel);
+	addRow(row++, new Label("Artist"), artistNameLabel);
 	setHgrow(artistNameLabel, Priority.ALWAYS);
 
 	// album
-	addRow(row++,new Label("Album"),albumNameLabel);
+	addRow(row++, new Label("Album"), albumNameLabel);
 	setHgrow(albumNameLabel, Priority.ALWAYS);
 
 	// title
-	addRow(row++,new Label("Title"),titleNameLabel);
+	addRow(row++, new Label("Title"), titleNameLabel);
 	setHgrow(titleNameLabel, Priority.ALWAYS);
 
     }

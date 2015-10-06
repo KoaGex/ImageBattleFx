@@ -3,7 +3,6 @@ package org.imagebattle.chooser;
 import java.io.File;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
@@ -13,9 +12,13 @@ import org.imagebattle.ImageBattleFolder;
 
 import javafx.util.Pair;
 
+/**
+ * @author KoaGex
+ *
+ */
 public class CandidateChooserSimulation {
     private static Logger log = LogManager.getLogger();
-    // TODO simulate!
+    // TODO turn this into a test?
 
     public static void main(String[] args) {
 	File funPicsDir = new File("D:\\bilder\\fun pics");
@@ -25,7 +28,6 @@ public class CandidateChooserSimulation {
 	String regex = ".*\\.(BMP|GIF|JPEG|JPG|PNG)";
 	boolean recursive = false;
 	ImageBattleFolder folder = ImageBattleFolder.readOrCreate(funPicsDir, regex, recursive);
-	Set<String> choosingAlgorithms = folder.getChoosingAlgorithms();
 
 	List<File> files = folder.getResultList().stream().map(entry -> entry.file).collect(Collectors.toList());
 

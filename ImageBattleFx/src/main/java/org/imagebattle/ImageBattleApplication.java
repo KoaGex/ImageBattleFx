@@ -25,13 +25,14 @@ import javafx.stage.Stage;
 
 public class ImageBattleApplication extends Application {
 
-    private static String IMAGE_BATTLE = "Image Battle ";
-    
+    private static final String IMAGE_BATTLE = "Image Battle ";
+
     private static final String CSS_FILE = "style.css";
 
     // Issue list
 
-    // TODO create hash values of image content to uniquely identify them after moving.
+    // TODO create hash values of image content to uniquely identify them after
+    // moving.
     // TODO use deeplearning4j
     // TODO history for the last selected folders
     // TODO export the result list (txt, csv, html)
@@ -93,7 +94,7 @@ public class ImageBattleApplication extends Application {
 	_stage = pStage;
 	String iconFileName = "/imageBattle32.png";
 	URL resource = this.getClass().getResource(iconFileName);
-	System.err.println("grrrrr"+resource);
+	System.err.println("grrrrr" + resource);
 	Image icon = new Image(resource.toString());
 	_stage.getIcons().add(icon);
 
@@ -155,14 +156,15 @@ public class ImageBattleApplication extends Application {
 	    BiFunction<ImageBattleFolder, Runnable, Scene> ratingSceneCreator,
 	    BiFunction<ImageBattleFolder, Runnable, Scene> rankingSceneCreator) {
 
-	BiConsumer<File, Boolean> confirmAction = (file, recursive) -> startBattle(file, ratingSceneCreator, fileRegex, rankingSceneCreator, recursive);
+	BiConsumer<File, Boolean> confirmAction = (file, recursive) -> startBattle(file, ratingSceneCreator, fileRegex,
+		rankingSceneCreator, recursive);
 	DirectoryChooserScene directoryChooserScene = DirectoryChooserScene.create(fileRegex, confirmAction);
-	
+
 	directoryChooserScene.getStylesheets().add(CSS_FILE);
 
 	Dimension screenSize = getScreenSize();
-	_stage.setWidth(screenSize.getWidth() -100);
-	_stage.setHeight(screenSize.getHeight() -100);
+	_stage.setWidth(screenSize.getWidth() - 100);
+	_stage.setHeight(screenSize.getHeight() - 100);
 	_stage.setResizable(true);
 	_stage.centerOnScreen();
 	_stage.setScene(directoryChooserScene);
@@ -174,10 +176,10 @@ public class ImageBattleApplication extends Application {
 	if (dir == null) {
 	    System.exit(1);
 	}
-	IMAGE_BATTLE += String.format(" ( %s ) ", dir.getAbsolutePath());
+	String newTitle = IMAGE_BATTLE + String.format(" ( %s ) ", dir.getAbsolutePath());
 
 	// initialize
-	_stage.setTitle(IMAGE_BATTLE);
+	_stage.setTitle(newTitle);
 	// _stage.setFullScreen(true);
 
 	// gather images

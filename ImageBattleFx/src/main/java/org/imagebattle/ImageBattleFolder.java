@@ -41,7 +41,7 @@ import javafx.util.Pair;
  */
 public class ImageBattleFolder implements Serializable {
     static final String IMAGE_BATTLE_DAT = "imageBattle.dat";
-    static final String IMAGE_BATTLE_RECURSIVE_DAT = "imageBattleRecursive.dat";
+    private static final String IMAGE_BATTLE_RECURSIVE_DAT = "imageBattleRecursive.dat";
 
     private static Logger log = LogManager.getLogger();
 
@@ -52,7 +52,6 @@ public class ImageBattleFolder implements Serializable {
 
     private final TransitiveDiGraph2 graph2;
 
-    private int humanDecisionCount = 0;
     File datFile;
     private Set<File> ignoredFiles; // FIXME continue
 
@@ -61,6 +60,8 @@ public class ImageBattleFolder implements Serializable {
      */
     private transient Map<String, ACandidateChooser> choosingAlgorithms = new HashMap<>();
     private transient ACandidateChooser choosingAlgorithm;
+
+    private boolean finished = false;
 
     /**
      * private Constructor, it should only be created by
@@ -85,17 +86,19 @@ public class ImageBattleFolder implements Serializable {
 		File currentDirectory = queue.removeFirst();
 
 		File[] subdirectories = currentDirectory.listFiles();
-		List<File> asList = Arrays.asList(subdirectories);
-		Map<Boolean, List<File>> partition = asList.stream()
-			.collect(Collectors.partitioningBy(File::isDirectory));
+		if (subdirectories != null) {
+		    List<File> asList = Arrays.asList(subdirectories);
+		    Map<Boolean, List<File>> partition = asList.stream()
+			    .collect(Collectors.partitioningBy(File::isDirectory));
 
-		// add directories to queue
-		queue.addAll(partition.get(Boolean.TRUE));
+		    // add directories to queue
+		    queue.addAll(partition.get(Boolean.TRUE));
 
-		// add matching files to current level
-		for (File aFile : partition.get(Boolean.FALSE)) {
-		    if (pattern.matcher(aFile.getName().toUpperCase()).matches()) {
-			currentLevel.add(aFile);
+		    // add matching files to current level
+		    for (File aFile : partition.get(Boolean.FALSE)) {
+			if (pattern.matcher(aFile.getName().toUpperCase()).matches()) {
+			    currentLevel.add(aFile);
+			}
 		    }
 		}
 
@@ -103,9 +106,11 @@ public class ImageBattleFolder implements Serializable {
 
 	} else {
 	    File[] allFiles = chosenDirectory.listFiles();
-	    for (File aFile : allFiles) {
-		if (pattern.matcher(aFile.getName().toUpperCase()).matches()) {
-		    currentLevel.add(aFile);
+	    if (allFiles != null) {
+		for (File aFile : allFiles) {
+		    if (pattern.matcher(aFile.getName().toUpperCase()).matches()) {
+			currentLevel.add(aFile);
+		    }
 		}
 	    }
 	}
@@ -142,38 +147,40 @@ public class ImageBattleFolder implements Serializable {
 	} else {
 
 	    // search for new images and add them
-	    List<File> currentFileArray = Arrays.asList(chosenDirectory.listFiles());
-	    List<File> currentFiles = new LinkedList<>(currentFileArray);
-	    log.info("currentFiles size:" + currentFiles.size());
+	    File[] listFiles = chosenDirectory.listFiles();
+	    if (listFiles != null) {
+		List<File> currentFiles = new LinkedList<>(Arrays.asList(listFiles));
+		log.info("currentFiles size:" + currentFiles.size());
 
-	    // TODO use regex
-	    // supported formats :BMP, GIF, JPEG, PNG
-	    Pattern pattern = Pattern.compile(".*\\.(BMP|GIF|JPEG|JPG|PNG)");
-	    currentFiles.removeIf(file -> {
-		boolean isDirectory = file.isDirectory();
-		String fileName = file.getName();
-		Matcher matcher = pattern.matcher(fileName.toUpperCase());
-		boolean removeIfResult = isDirectory || !matcher.matches();
-		log.trace("matches: {}      \t    \tfile: {}", !removeIfResult, fileName);
-		return removeIfResult;
-	    });
+		// TODO use regex
+		// supported formats :BMP, GIF, JPEG, PNG
+		Pattern pattern = Pattern.compile(".*\\.(BMP|GIF|JPEG|JPG|PNG)");
+		currentFiles.removeIf(file -> {
+		    boolean isDirectory = file.isDirectory();
+		    String fileName = file.getName();
+		    Matcher matcher = pattern.matcher(fileName.toUpperCase());
+		    boolean removeIfResult = isDirectory || !matcher.matches();
+		    log.trace("matches: {}      \t    \tfile: {}", !removeIfResult, fileName);
+		    return removeIfResult;
+		});
 
-	    Set<File> oldNodes = result.graph2.vertexSet();
-	    log.info("oldNodes size:" + oldNodes.size());
-	    currentFiles.removeAll(oldNodes);
+		Set<File> oldNodes = result.graph2.vertexSet();
+		log.info("oldNodes size:" + oldNodes.size());
+		currentFiles.removeAll(oldNodes);
 
-	    currentFiles.forEach(result.graph2::addVertex);
+		currentFiles.forEach(result.graph2::addVertex);
 
-	    // add new images to graph2
-	    final ImageBattleFolder tempResult = result; // for effectively
-							 // final in lambda
-	    currentFiles.forEach(file -> {
-		boolean wasAdded = tempResult.graph2.addVertex(file);
-		if (wasAdded) {
-		    log.info("new file added: {}", file);
-		}
-	    });
+		// add new images to graph2
+		final ImageBattleFolder tempResult = result; // for effectively
+							     // final in lambda
+		currentFiles.forEach(file -> {
+		    boolean wasAdded = tempResult.graph2.addVertex(file);
+		    if (wasAdded) {
+			log.info("new file added: {}", file);
+		    }
+		});
 
+	    }
 	}
 
 	// Merge in vertexes and edges from CentralStorage.
@@ -216,7 +223,7 @@ public class ImageBattleFolder implements Serializable {
 	return result;
     }
 
-    ResultListEntry fileToResultEntry(File i) {
+    private ResultListEntry fileToResultEntry(File i) {
 	ResultListEntry entry = new ResultListEntry();
 	entry.file = i;
 	entry.wins = graph2.outDegreeOf(i);
@@ -255,7 +262,6 @@ public class ImageBattleFolder implements Serializable {
 
     public void makeDecision(File pWinner, File pLoser) {
 	graph2.addEdge(pWinner, pLoser);
-	humanDecisionCount++;
     }
 
     public Set<String> getChoosingAlgorithms() {
@@ -317,14 +323,6 @@ public class ImageBattleFolder implements Serializable {
 	CentralStorage.save(graph2, ignoredFiles);
     }
 
-    /**
-     * Count of decisions to give the user a feeling about how much time was
-     * invested into battle.
-     */
-    int getHumanDecisionCount() {
-	return humanDecisionCount;
-    }
-
     void ignoreFile(File file) {
 	ignoredFiles.add(file);
 	log.info("added file {}. Now on ignore: {}", file, ignoredFiles);
@@ -346,4 +344,13 @@ public class ImageBattleFolder implements Serializable {
 	graph2.removeVertex(pFileToReset);
 	graph2.addVertex(pFileToReset);
     }
+
+    boolean isFinished() {
+	return finished;
+    }
+
+    void setFinished(boolean finished) {
+	this.finished = finished;
+    }
+
 }

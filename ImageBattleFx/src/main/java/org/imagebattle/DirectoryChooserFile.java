@@ -4,7 +4,7 @@ import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
 
-public class DirectoryChooserFile extends File {
+class DirectoryChooserFile extends File {
 
     /**
      * 
@@ -15,9 +15,7 @@ public class DirectoryChooserFile extends File {
 
     private int recursiveImageCount = 0;
 
-    boolean hasImageBattleFile;
-
-    public DirectoryChooserFile(String pathname, String regex) {
+    DirectoryChooserFile(String pathname, String regex) {
 	super(pathname);
 	File[] listFiles = listFiles();
 	if (listFiles != null) {
@@ -28,13 +26,11 @@ public class DirectoryChooserFile extends File {
 	    }
 	}
 
-	hasImageBattleFile = new File(pathname + File.separator + ImageBattleFolder.IMAGE_BATTLE_DAT).exists();
     }
 
     @Override
     public String toString() {
-	String hasFileChar = hasImageBattleFile ? "*" : "";
-	return getName() + " (" + images.size() + "/" + recursiveImageCount + ")" + hasFileChar;
+	return getName() + " (" + images.size() + "/" + recursiveImageCount + ")";
     }
 
     void incrementRecursiveImageCount() {

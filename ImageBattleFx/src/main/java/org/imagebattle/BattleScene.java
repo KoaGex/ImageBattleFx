@@ -38,7 +38,7 @@ import javafx.util.Pair;
  * @author KoaGex
  *
  */
-public class BattleScene extends Scene {
+final class BattleScene extends Scene {
 
     private static Logger log = LogManager.getLogger();
 
@@ -50,7 +50,7 @@ public class BattleScene extends Scene {
 
     private final DoubleProperty progressProperty;
 
-    public BattleScene(StackPane switchSceneStackPane, ImageBattleFolder folder, Runnable switchSceneAction) {
+    private BattleScene(StackPane switchSceneStackPane, ImageBattleFolder folder, Runnable switchSceneAction) {
 	super(switchSceneStackPane);
 	imageBattleFolder = folder;
 
@@ -249,9 +249,6 @@ public class BattleScene extends Scene {
 
 	    // persist
 	    imageBattleFolder.save();
-	    int humanDecisionCount = imageBattleFolder.getHumanDecisionCount();
-	    log.trace("decisions made so far:" + humanDecisionCount);
-
 	}
 
 	double progress = imageBattleFolder.getProgress();
@@ -261,7 +258,7 @@ public class BattleScene extends Scene {
 	try {
 	    Pair<File, File> next = imageBattleFolder.getNextToCompare();
 	    fileLeft = next.getKey();
-                            	    fileRight = next.getValue();
+	    fileRight = next.getValue();
 
 	    imageViewLeft.setNewImage(fileLeft);
 	    imageViewRight.setNewImage(fileRight);
@@ -314,7 +311,6 @@ public class BattleScene extends Scene {
 	    double leftRightFactor = leftArea / rightArea;
 	    double rightAdaptedWidth = Math.sqrt(leftRightFactor) * rightWidth;
 	    double rightAdaptedHeight = Math.sqrt(leftRightFactor) * rightHeight;
-	    double rightAdaptedArea = rightAdaptedWidth * rightAdaptedHeight;
 
 	    double combinedWidth = leftWidth + rightAdaptedWidth;
 	    double combinedHeight = Math.max(leftHeight, rightAdaptedHeight);

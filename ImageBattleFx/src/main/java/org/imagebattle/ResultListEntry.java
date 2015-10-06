@@ -3,10 +3,10 @@ package org.imagebattle;
 import java.io.File;
 
 public class ResultListEntry {
-	public int place;
-	public int wins;
-	public int loses;
-	public File file;
-	public boolean ignored = false;
-	public boolean fixed = false;
+    int place;
+    int wins;
+    int loses;
+    public File file;
+    boolean ignored = false;
+    boolean fixed = false;
 }
