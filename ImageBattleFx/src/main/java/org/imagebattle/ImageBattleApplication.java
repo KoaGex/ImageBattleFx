@@ -94,7 +94,7 @@ public class ImageBattleApplication extends Application {
 	_stage = pStage;
 	String iconFileName = "/imageBattle32.png";
 	URL resource = this.getClass().getResource(iconFileName);
-	System.err.println("grrrrr" + resource);
+	log.debug("icon image url: {}", resource);
 	Image icon = new Image(resource.toString());
 	_stage.getIcons().add(icon);
 

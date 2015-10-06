@@ -91,7 +91,7 @@ public class SameWinLoseRationCandidateChooser extends ACandidateChooser {
 	int size = list.size();
 	Random random = new Random();
 	int index = random.nextInt(size);
-	log.debug(index + "/" + size);
+	log.debug(" {} / {}", index, size);
 	return list.get(index);
     }
 
