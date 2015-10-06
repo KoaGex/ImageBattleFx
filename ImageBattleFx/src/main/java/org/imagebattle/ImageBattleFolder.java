@@ -2,10 +2,8 @@ package org.imagebattle;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -36,6 +34,9 @@ import org.imagebattle.chooser.WinnerOrientedCandidateChooser;
 import javafx.util.Pair;
 
 /**
+ * Represents one folder the user has chosen. Files that are direct or indirect
+ * children of this directory take part in the battle.
+ * 
  * @author Besitzer
  *
  */
@@ -53,7 +54,7 @@ public class ImageBattleFolder implements Serializable {
     private final TransitiveDiGraph2 graph2;
 
     File datFile;
-    private Set<File> ignoredFiles; // FIXME continue
+    private Set<File> ignoredFiles;
 
     /**
      * Multiple strategies to select the next images to be compared.
@@ -311,15 +312,6 @@ public class ImageBattleFolder implements Serializable {
     }
 
     void save() {
-	try {
-	    FileOutputStream fileOutputStream = new FileOutputStream(datFile);
-	    ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream);
-	    objectOutputStream.writeObject(this);
-	    objectOutputStream.close();
-	} catch (Exception e) {
-	    e.printStackTrace();
-	}
-
 	CentralStorage.save(graph2, ignoredFiles);
     }
 
