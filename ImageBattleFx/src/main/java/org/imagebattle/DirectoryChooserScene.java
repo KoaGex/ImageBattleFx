@@ -15,7 +15,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -38,6 +37,19 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 
+/**
+ * A scene for a dialog to choose on directory for your next battle.
+ * 
+ * On the left is a tree structure of your folders.
+ * 
+ * To the right is an area for previewing the folders files relevant to the
+ * chosen battle type.
+ * 
+ * Bottom line: Ok button and checkbox for recursive.
+ * 
+ * @author KoaGex
+ *
+ */
 final class DirectoryChooserScene extends Scene {
     private static Logger log = LogManager.getLogger();
     private TreeView<DirectoryChooserFile> treeView = new TreeView<>();
@@ -82,30 +94,43 @@ final class DirectoryChooserScene extends Scene {
 	    List<File> images = newSelected.getValue().images;
 	    ObservableList<Node> children = flowPane.getChildren();
 	    children.clear();
-	    List<ImageView> collect = images.stream().map(file -> {
-
-		ImageView imageView = new ImageView();
-		log.trace(file.getName());
-		boolean smooth = true;
-		boolean preserveRatio = true;
-		Image image;
-		try {
-		    FileInputStream fis = new FileInputStream(file);
-		    image = new Image(fis, 500d, 200, preserveRatio, smooth);
-		} catch (FileNotFoundException e) {
-		    e.printStackTrace();
-		    return null;
+	    Runnable convertAndAdd = () -> {
+		for (File file : images) {
+		    ImageView imageView = fileToImageView(file);
+		    Platform.runLater(() -> {
+			log.trace("add file {}", file);
+			children.add(imageView);
+		    });
 		}
+	    };
+	    // TODO bug: stop old thread before selecting new folder.
 
-		imageView.setImage(image);
-		imageView.setPreserveRatio(true);
-		imageView.setFitHeight(200);
-		FlowPane.setMargin(imageView, new Insets(3));
-		return imageView;
-	    }).collect(Collectors.toList());
-	    children.addAll(collect);
+	    Thread thread = new Thread(convertAndAdd);
+	    thread.start();
 	});
 	treeView.requestFocus();
+    }
+
+    private ImageView fileToImageView(File file) {
+
+	ImageView imageView = new ImageView();
+	log.trace(file.getName());
+	boolean smooth = true;
+	boolean preserveRatio = true;
+	Image image;
+	try {
+	    FileInputStream fis = new FileInputStream(file);
+	    image = new Image(fis, 500d, 200, preserveRatio, smooth);
+	} catch (FileNotFoundException e) {
+	    e.printStackTrace();
+	    return null;
+	}
+
+	imageView.setImage(image);
+	imageView.setPreserveRatio(true);
+	imageView.setFitHeight(200);
+	FlowPane.setMargin(imageView, new Insets(3));
+	return imageView;
     }
 
     private TreeItem<DirectoryChooserFile> buildDirectoryTree(String fileRegex) {
@@ -138,7 +163,7 @@ final class DirectoryChooserScene extends Scene {
 
 		    @Override
 		    public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
-			System.err.println("failed:" + file);
+			log.debug("failed: {}", file);
 			return FileVisitResult.CONTINUE;
 		    }
 
