@@ -20,8 +20,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javafx.application.Platform;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -29,6 +32,7 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.MultipleSelectionModel;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.ScrollPane.ScrollBarPolicy;
+import javafx.scene.control.SplitPane;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import javafx.scene.image.Image;
@@ -51,8 +55,11 @@ import javafx.scene.layout.HBox;
  *
  */
 final class DirectoryChooserScene extends Scene {
-    private static Logger log = LogManager.getLogger();
-    private TreeView<DirectoryChooserFile> treeView = new TreeView<>();
+    private static final Logger LOG = LogManager.getLogger();
+    /**
+     * Directory tree of folder that contain files matching the battle type.
+     */
+    private final TreeView<DirectoryChooserFile> treeView = new TreeView<>();
 
     static DirectoryChooserScene create(String fileRegex, BiConsumer<File, Boolean> confirmAction) {
 	BorderPane borderPane = new BorderPane();
@@ -66,19 +73,30 @@ final class DirectoryChooserScene extends Scene {
 	treeView.setRoot(rootItem);
 	rootItem.setExpanded(true);
 
-	borderPane.setLeft(treeView);
 	FlowPane flowPane = new FlowPane();
 	ScrollPane scrollPane = new ScrollPane(flowPane);
 	scrollPane.setVbarPolicy(ScrollBarPolicy.AS_NEEDED);
 	scrollPane.setHbarPolicy(ScrollBarPolicy.AS_NEEDED);
 	flowPane.prefWidthProperty().bind(scrollPane.widthProperty().subtract(30));
 
-	borderPane.setCenter(scrollPane);
+	SplitPane splitPane = new SplitPane(treeView, scrollPane);
+
+	/*
+	 * If 10 percent are less than 250 pixels the divider will be set to 250
+	 * pixels from the left.
+	 */
+	treeView.setMinWidth(250);
+	splitPane.setDividerPositions(0.10);
+	// MinWidth does not affect scrollPane. It just shows a scrollbar.
+
+	borderPane.setCenter(splitPane);
 
 	Button okButton = new Button("ok");
 	okButton.setDefaultButton(true);
 
 	CheckBox recursiveCheckbox = new CheckBox("Inlude files in subdirectories");
+	// Defaulty use recursive mode. Should be used in most cases.
+	recursiveCheckbox.setSelected(true);
 
 	okButton.setOnAction(event -> {
 	    MultipleSelectionModel<TreeItem<DirectoryChooserFile>> selectionModel = treeView.getSelectionModel();
@@ -87,23 +105,38 @@ final class DirectoryChooserScene extends Scene {
 	    confirmAction.accept(chosenDirectory, recursiveCheckbox.isSelected());
 	});
 
-	borderPane.setBottom(new HBox(okButton, recursiveCheckbox));
+	HBox hBox = new HBox(recursiveCheckbox, okButton);
+	HBox.setMargin(okButton, new Insets(5));
+	hBox.setAlignment(Pos.CENTER);
+	borderPane.setBottom(hBox);
+
+	// Use this to avoid mixing images of multiple folders.
+	StringProperty currentDirectory = new SimpleStringProperty();
+	// List bind/unbind does not work. Need old list to remove binding.
 
 	treeView.getSelectionModel().selectedItemProperty().addListener((a, b, newSelected) -> {
-	    System.out.println(newSelected);
-	    List<File> images = newSelected.getValue().images;
+	    LOG.trace(newSelected);
+	    // TODO recursively get all images?
+
+	    DirectoryChooserFile value = newSelected.getValue();
+
+	    String absolutePath = value.getAbsolutePath();
+	    currentDirectory.setValue(absolutePath);
+
+	    List<File> images = value.images;
 	    ObservableList<Node> children = flowPane.getChildren();
 	    children.clear();
 	    Runnable convertAndAdd = () -> {
 		for (File file : images) {
-		    ImageView imageView = fileToImageView(file);
-		    Platform.runLater(() -> {
-			log.trace("add file {}", file);
-			children.add(imageView);
-		    });
+		    // If directory changed, do not add images of old directory.
+		    if (absolutePath.equals(currentDirectory.get())) {
+			ImageView imageView = loadImagePreview(file);
+			Platform.runLater(() -> {
+			    children.add(imageView);
+			});
+		    }
 		}
 	    };
-	    // TODO bug: stop old thread before selecting new folder.
 
 	    Thread thread = new Thread(convertAndAdd);
 	    thread.start();
@@ -111,10 +144,15 @@ final class DirectoryChooserScene extends Scene {
 	treeView.requestFocus();
     }
 
-    private ImageView fileToImageView(File file) {
+    /**
+     * @param file
+     *            Load this image file.
+     * @return {@link ImageView} in bounded size.
+     */
+    private ImageView loadImagePreview(File file) {
 
 	ImageView imageView = new ImageView();
-	log.trace(file.getName());
+	LOG.trace(file.getName());
 	boolean smooth = true;
 	boolean preserveRatio = true;
 	Image image;
@@ -122,8 +160,7 @@ final class DirectoryChooserScene extends Scene {
 	    FileInputStream fis = new FileInputStream(file);
 	    image = new Image(fis, 500d, 200, preserveRatio, smooth);
 	} catch (FileNotFoundException e) {
-	    e.printStackTrace();
-	    return null;
+	    throw new UncheckedIOException(e);
 	}
 
 	imageView.setImage(image);
@@ -155,7 +192,7 @@ final class DirectoryChooserScene extends Scene {
 			if (isImage) {
 			    Platform.runLater(() -> {
 				createTreeItem(rootItem, file.toFile(), fileRegex);
-				log.trace("success:" + file);
+				LOG.trace("success: {}", file);
 			    });
 			}
 			return FileVisitResult.CONTINUE;
@@ -163,7 +200,7 @@ final class DirectoryChooserScene extends Scene {
 
 		    @Override
 		    public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
-			log.debug("failed: {}", file);
+			LOG.debug("failed: {}", file);
 			return FileVisitResult.CONTINUE;
 		    }
 
@@ -176,7 +213,7 @@ final class DirectoryChooserScene extends Scene {
 	    } catch (IOException e) {
 		throw new UncheckedIOException(e);
 	    }
-	    log.debug("tree building finished");
+	    LOG.debug("tree building finished");
 	};
 
 	Thread thread = new Thread(walk);
