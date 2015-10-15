@@ -6,6 +6,9 @@ import java.io.File;
 import java.net.URL;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.regex.Pattern;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -124,15 +127,25 @@ public class ImageBattleApplication extends Application {
 
 	gridPane.getChildren().addAll(label, imagesButton, musicButton);
 
+	Function<String, Predicate<File>> fileNameRegexChecker = regex -> {
+	    Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
+	    return file -> {
+		return pattern.matcher(file.getName()).matches();
+	    };
+	};
+
 	musicButton.setOnAction(event -> {
 	    log.info("music");
 	    String regex = ".*\\.(MP3|OGG)";
-	    showDirectoryChooser(regex, MusicBattleScene::createBattleScene, MusicRankingScene::createRankingScene);
+	    Predicate<File> filePredicate = fileNameRegexChecker.apply(regex);
+	    showDirectoryChooser(filePredicate, MusicBattleScene::createBattleScene,
+		    MusicRankingScene::createRankingScene);
 	});
 	imagesButton.setOnAction(event -> {
 	    log.info("images");
 	    String regex = ".*\\.(BMP|GIF|JPEG|JPG|PNG)";
-	    showDirectoryChooser(regex, BattleScene::createBattleScene, RankingScene::createRankingScene);
+	    Predicate<File> filePredicate = fileNameRegexChecker.apply(regex);
+	    showDirectoryChooser(filePredicate, BattleScene::createBattleScene, RankingScene::createRankingScene);
 	});
 
 	Scene battleKindChooserScene = new Scene(gridPane);
@@ -152,7 +165,7 @@ public class ImageBattleApplication extends Application {
 	log.debug("showing battle kind chooser");
     }
 
-    private void showDirectoryChooser(String fileRegex,
+    private void showDirectoryChooser(Predicate<File> fileRegex,
 	    BiFunction<ImageBattleFolder, Runnable, Scene> ratingSceneCreator,
 	    BiFunction<ImageBattleFolder, Runnable, Scene> rankingSceneCreator) {
 
@@ -171,7 +184,8 @@ public class ImageBattleApplication extends Application {
     }
 
     private void startBattle(File dir, BiFunction<ImageBattleFolder, Runnable, Scene> ratingSceneCreator,
-	    String fileRegex, BiFunction<ImageBattleFolder, Runnable, Scene> rankingSceneCreator, Boolean recursive) {
+	    Predicate<File> fileRegex, BiFunction<ImageBattleFolder, Runnable, Scene> rankingSceneCreator,
+	    Boolean recursive) {
 
 	if (dir == null) {
 	    System.exit(1);

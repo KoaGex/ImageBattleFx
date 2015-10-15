@@ -14,8 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
@@ -51,7 +50,7 @@ public class ImageBattleFolder implements Serializable {
      */
     private static final long serialVersionUID = 1L;
 
-    private final TransitiveDiGraph2 graph2;
+    final TransitiveDiGraph2 graph2;
 
     File datFile;
     private Set<File> ignoredFiles;
@@ -72,13 +71,12 @@ public class ImageBattleFolder implements Serializable {
      * @param fileRegex
      * @param recursive
      */
-    private ImageBattleFolder(File chosenDirectory, String fileRegex, Boolean recursive) {
+    private ImageBattleFolder(File chosenDirectory, Predicate<File> fileRegex, Boolean recursive) {
 	String datFileName = recursive ? IMAGE_BATTLE_RECURSIVE_DAT : IMAGE_BATTLE_DAT;
 	datFile = new File(chosenDirectory.getAbsolutePath() + File.separator + datFileName);
 
 	// TODO handle directory without images chosen
 	LinkedList<File> currentLevel = new LinkedList<>();
-	Pattern pattern = Pattern.compile(fileRegex);
 
 	if (recursive) {
 	    LinkedList<File> queue = new LinkedList<>();
@@ -96,11 +94,9 @@ public class ImageBattleFolder implements Serializable {
 		    queue.addAll(partition.get(Boolean.TRUE));
 
 		    // add matching files to current level
-		    for (File aFile : partition.get(Boolean.FALSE)) {
-			if (pattern.matcher(aFile.getName().toUpperCase()).matches()) {
-			    currentLevel.add(aFile);
-			}
-		    }
+		    partition.get(Boolean.FALSE).stream()//
+			    .filter(fileRegex)//
+			    .forEach(currentLevel::add);
 		}
 
 	    }
@@ -109,7 +105,7 @@ public class ImageBattleFolder implements Serializable {
 	    File[] allFiles = chosenDirectory.listFiles();
 	    if (allFiles != null) {
 		for (File aFile : allFiles) {
-		    if (pattern.matcher(aFile.getName().toUpperCase()).matches()) {
+		    if (fileRegex.test(aFile)) {
 			currentLevel.add(aFile);
 		    }
 		}
@@ -121,7 +117,7 @@ public class ImageBattleFolder implements Serializable {
 
     }
 
-    public static ImageBattleFolder readOrCreate(File chosenDirectory, String fileRegex, Boolean recursive) {
+    public static ImageBattleFolder readOrCreate(File chosenDirectory, Predicate<File> fileRegex, Boolean recursive) {
 	log.info("chosenDirectory: {}", chosenDirectory);
 	ImageBattleFolder result = null;
 
@@ -155,18 +151,17 @@ public class ImageBattleFolder implements Serializable {
 
 		// TODO use regex
 		// supported formats :BMP, GIF, JPEG, PNG
-		Pattern pattern = Pattern.compile(".*\\.(BMP|GIF|JPEG|JPG|PNG)");
 		currentFiles.removeIf(file -> {
 		    boolean isDirectory = file.isDirectory();
 		    String fileName = file.getName();
-		    Matcher matcher = pattern.matcher(fileName.toUpperCase());
-		    boolean removeIfResult = isDirectory || !matcher.matches();
+		    boolean removeIfResult = isDirectory || !fileRegex.test(file);
 		    log.trace("matches: {}      \t    \tfile: {}", !removeIfResult, fileName);
 		    return removeIfResult;
 		});
 
 		Set<File> oldNodes = result.graph2.vertexSet();
-		log.info("oldNodes size:" + oldNodes.size());
+		int oldEdgeSize = result.graph2.edgeSet().size();
+		log.info("oldNodes size: {}   oldEdges size: {}", oldNodes.size(), oldEdgeSize);
 		currentFiles.removeAll(oldNodes);
 
 		currentFiles.forEach(result.graph2::addVertex);
@@ -199,7 +194,7 @@ public class ImageBattleFolder implements Serializable {
 	}
 
 	// Merge in ignored files from CentralStorage.
-	Set<File> readIgnoreFile = CentralStorage.readIgnoreFile(chosenDirectory, fileRegex, recursive);
+	Set<File> readIgnoreFile = CentralStorage.readIgnoreFile();
 	result.ignoredFiles.addAll(readIgnoreFile);
 
 	// choosing algorithms
@@ -224,15 +219,6 @@ public class ImageBattleFolder implements Serializable {
 	return result;
     }
 
-    private ResultListEntry fileToResultEntry(File i) {
-	ResultListEntry entry = new ResultListEntry();
-	entry.file = i;
-	entry.wins = graph2.outDegreeOf(i);
-	entry.loses = graph2.inDegreeOf(i);
-	entry.fixed = graph2.vertexSet().size() - 1 == entry.wins + entry.loses;
-	return entry;
-    }
-
     public List<ResultListEntry> getResultList() {
 
 	// Comparator<File> winnerFirstComparator =
@@ -242,7 +228,7 @@ public class ImageBattleFolder implements Serializable {
 		Comparator.reverseOrder());
 	List<ResultListEntry> resultList = graph2.vertexSet().stream() //
 		.sorted(winnerFirstComparator)//
-		.map(this::fileToResultEntry)//
+		.map(graph2::fileToResultEntry)//
 		.collect(Collectors.toList());
 	// zip would be cool
 	for (int i = 0; i < resultList.size(); i++) {

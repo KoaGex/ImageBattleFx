@@ -11,7 +11,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -64,6 +63,9 @@ class CentralStorage {
 		.sorted()//
 		.collect(Collectors.joining("\n"));
 
+	log.debug("file lines before save: {}    current edge count: {} ", oldFileContent.size(),
+		graph.edgeSet().size());
+
 	writeStringIntoFile(graphCsvContent, graphCsv);
 
 	saveIgnoreFile(ignoredFiles);
@@ -84,7 +86,8 @@ class CentralStorage {
 	}
     }
 
-    static TransitiveDiGraph2 readGraph(File chosenDirectory, String fileRegex, Boolean recursive) {
+    static TransitiveDiGraph2 readGraph(File chosenDirectory, Predicate<? super File> matchesFileRegex,
+	    Boolean recursive) {
 
 	Predicate<File> containedRecursively = file -> {
 	    return file.getAbsolutePath().startsWith(chosenDirectory.getAbsolutePath());
@@ -94,11 +97,6 @@ class CentralStorage {
 	    return directorFiles.contains(file);
 	};
 	Predicate<File> matchesChosenDirectory = recursive ? containedRecursively : containedDirectly;
-
-	Predicate<File> matchesFileRegex = file -> {
-	    Pattern pattern = Pattern.compile(fileRegex);
-	    return pattern.matcher(file.getName().toUpperCase()).matches();
-	};
 
 	Predicate<File> acceptFile = matchesChosenDirectory.and(matchesFileRegex);
 
@@ -143,12 +141,19 @@ class CentralStorage {
 		.sorted()//
 		.collect(Collectors.joining("\n"));
 
-	log.debug(newIgnoredFiles);
+	log.trace(newIgnoredFiles);
 	writeStringIntoFile(newIgnoredFiles, ignoreFile);
 
     }
 
     static Set<File> readIgnoreFile(File chosenDirectory, String fileRegex, Boolean recursive) {
+	// FIXME use the parameters
+	File file = getIgnoreFile();
+	Set<String> readFile = readFile(file);
+	return readFile.stream().map(File::new).collect(Collectors.toSet());
+    }
+
+    static Set<File> readIgnoreFile() {
 	File file = getIgnoreFile();
 	Set<String> readFile = readFile(file);
 	return readFile.stream().map(File::new).collect(Collectors.toSet());

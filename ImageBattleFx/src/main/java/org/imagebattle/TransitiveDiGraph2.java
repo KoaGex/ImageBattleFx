@@ -125,4 +125,13 @@ public class TransitiveDiGraph2 extends SimpleDirectedGraph<File, DefaultEdge> {
     public boolean containsAnyEdge(File v1, File v2) {
 	return containsEdge(v1, v2) || containsEdge(v2, v1);
     }
+
+    ResultListEntry fileToResultEntry(File i) {
+        ResultListEntry entry = new ResultListEntry();
+        entry.file = i;
+        entry.wins = outDegreeOf(i);
+        entry.loses = inDegreeOf(i);
+        entry.fixed = vertexSet().size() - 1 == entry.wins + entry.loses;
+        return entry;
+    }
 }

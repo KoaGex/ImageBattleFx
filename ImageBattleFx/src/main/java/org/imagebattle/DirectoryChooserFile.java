@@ -3,6 +3,7 @@ package org.imagebattle;
 import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Predicate;
 
 class DirectoryChooserFile extends File {
 
@@ -15,12 +16,12 @@ class DirectoryChooserFile extends File {
 
     private int recursiveImageCount = 0;
 
-    DirectoryChooserFile(String pathname, String regex) {
+    DirectoryChooserFile(String pathname, Predicate<File> fileRegex) {
 	super(pathname);
 	File[] listFiles = listFiles();
 	if (listFiles != null) {
 	    for (File file : listFiles) {
-		if (file.getName().toUpperCase().matches(regex)) {
+		if (fileRegex.test(file)) {
 		    images.add(file);
 		}
 	    }

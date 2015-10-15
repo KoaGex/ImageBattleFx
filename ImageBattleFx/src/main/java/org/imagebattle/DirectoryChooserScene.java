@@ -14,14 +14,14 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.BiConsumer;
-import java.util.regex.Pattern;
+import java.util.function.Predicate;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javafx.application.Platform;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -61,12 +61,13 @@ final class DirectoryChooserScene extends Scene {
      */
     private final TreeView<DirectoryChooserFile> treeView = new TreeView<>();
 
-    static DirectoryChooserScene create(String fileRegex, BiConsumer<File, Boolean> confirmAction) {
+    static DirectoryChooserScene create(Predicate<File> fileRegex, BiConsumer<File, Boolean> confirmAction) {
 	BorderPane borderPane = new BorderPane();
 	return new DirectoryChooserScene(borderPane, fileRegex, confirmAction);
     }
 
-    private DirectoryChooserScene(BorderPane borderPane, String fileRegex, BiConsumer<File, Boolean> confirmAction) {
+    private DirectoryChooserScene(BorderPane borderPane, Predicate<File> fileRegex,
+	    BiConsumer<File, Boolean> confirmAction) {
 	super(borderPane);
 
 	TreeItem<DirectoryChooserFile> rootItem = buildDirectoryTree(fileRegex);
@@ -111,7 +112,7 @@ final class DirectoryChooserScene extends Scene {
 	borderPane.setBottom(hBox);
 
 	// Use this to avoid mixing images of multiple folders.
-	StringProperty currentDirectory = new SimpleStringProperty();
+	IntegerProperty imageLoadThreadNumber = new SimpleIntegerProperty(0);
 	// List bind/unbind does not work. Need old list to remove binding.
 
 	treeView.getSelectionModel().selectedItemProperty().addListener((a, b, newSelected) -> {
@@ -120,22 +121,24 @@ final class DirectoryChooserScene extends Scene {
 
 	    DirectoryChooserFile value = newSelected.getValue();
 
-	    String absolutePath = value.getAbsolutePath();
-	    currentDirectory.setValue(absolutePath);
+	    Integer currentThreadNumber = imageLoadThreadNumber.get() + 1;
+	    imageLoadThreadNumber.set(currentThreadNumber);
 
 	    List<File> images = value.images;
 	    ObservableList<Node> children = flowPane.getChildren();
 	    children.clear();
 	    Runnable convertAndAdd = () -> {
+		LOG.debug("started loadThread {}", currentThreadNumber);
 		for (File file : images) {
 		    // If directory changed, do not add images of old directory.
-		    if (absolutePath.equals(currentDirectory.get())) {
+		    if (currentThreadNumber.equals(imageLoadThreadNumber.get())) {
 			ImageView imageView = loadImagePreview(file);
 			Platform.runLater(() -> {
 			    children.add(imageView);
 			});
 		    }
 		}
+		LOG.debug("finished loadThread {}", currentThreadNumber);
 	    };
 
 	    Thread thread = new Thread(convertAndAdd);
@@ -170,11 +173,10 @@ final class DirectoryChooserScene extends Scene {
 	return imageView;
     }
 
-    private TreeItem<DirectoryChooserFile> buildDirectoryTree(String fileRegex) {
+    private TreeItem<DirectoryChooserFile> buildDirectoryTree(Predicate<File> fileRegex) {
 
 	TreeItem<DirectoryChooserFile> rootItem = new TreeItem<>(new DirectoryChooserFile("D:\\", fileRegex));
 	Path start = Paths.get("D:\\");
-	Pattern pattern = Pattern.compile(fileRegex);
 	Runnable walk = () -> {
 	    try {
 		// A normal Files.walk stumbles over errors it can not handle.
@@ -188,7 +190,7 @@ final class DirectoryChooserScene extends Scene {
 
 		    @Override
 		    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-			boolean isImage = pattern.matcher(file.toFile().getAbsolutePath().toUpperCase()).matches();
+			boolean isImage = fileRegex.test(file.toFile());
 			if (isImage) {
 			    Platform.runLater(() -> {
 				createTreeItem(rootItem, file.toFile(), fileRegex);
@@ -222,7 +224,7 @@ final class DirectoryChooserScene extends Scene {
 	return rootItem;
     }
 
-    private void createTreeItem(TreeItem<DirectoryChooserFile> rootItem, File imageFile, String regex) {
+    private void createTreeItem(TreeItem<DirectoryChooserFile> rootItem, File imageFile, Predicate<File> fileRegex) {
 	List<File> list = new LinkedList<>();
 	File f = imageFile;
 	while (f != null) {
@@ -244,7 +246,7 @@ final class DirectoryChooserScene extends Scene {
 			    .map(TreeItem::getValue)//
 			    .noneMatch(file2::equals);
 		    if (noneMatch) {
-			DirectoryChooserFile value = new DirectoryChooserFile(absolutePath, regex);
+			DirectoryChooserFile value = new DirectoryChooserFile(absolutePath, fileRegex);
 			TreeItem<DirectoryChooserFile> newTreeItem = new TreeItem<>(value);
 			treeItem.getChildren().add(newTreeItem);
 		    }
