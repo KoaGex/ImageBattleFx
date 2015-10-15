@@ -64,3 +64,7 @@
 	-fx-padding: 10;
 	-fx-font: 16px "Arial";
 }
+
+.battle-image-view  {
+	-fx-cursor: hand;
+}

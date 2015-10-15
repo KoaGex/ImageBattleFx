@@ -33,6 +33,8 @@ class BattleImageView extends ImageView {
 	resolution = resolutionLabel.textProperty();
 	String resolutionLabelStyleClassName = "resolution-label";
 	resolutionLabel.getStyleClass().add(resolutionLabelStyleClassName);
+
+	this.getStyleClass().add("battle-image-view");
     }
 
     Label getResolutionLabel() {
