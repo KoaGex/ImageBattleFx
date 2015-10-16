@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.imagebattle.BattleFinishedException;
+import org.imagebattle.ImageBattleApplication;
 import org.imagebattle.ImageBattleFolder;
 
 import javafx.util.Pair;
@@ -27,7 +28,8 @@ public class CandidateChooserSimulation {
 
 	String regex = ".*\\.(BMP|GIF|JPEG|JPG|PNG)";
 	boolean recursive = false;
-	ImageBattleFolder folder = ImageBattleFolder.readOrCreate(funPicsDir, regex, recursive);
+	ImageBattleFolder folder = ImageBattleFolder.readOrCreate(funPicsDir, ImageBattleApplication.imagePredicate,
+		recursive);
 
 	List<File> files = folder.getResultList().stream().map(entry -> entry.file).collect(Collectors.toList());
 

@@ -6,7 +6,6 @@ import java.io.File;
 import java.net.URL;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
@@ -27,10 +26,6 @@ import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
 
 public class ImageBattleApplication extends Application {
-
-    private static final String IMAGE_BATTLE = "Image Battle ";
-
-    private static final String CSS_FILE = "style.css";
 
     // Issue list
 
@@ -79,6 +74,13 @@ public class ImageBattleApplication extends Application {
     // TODO rewrite using spark for a more centralized way => how to handle
     // multiple users rating the same images? each has own graph but candidate
     // choosing looks at others graphs
+    static final Predicate<File> musicPredicate = createFileRegexChecker(".*\\.(MP3|OGG)");
+
+    public static final Predicate<File> imagePredicate = createFileRegexChecker(".*\\.(BMP|GIF|JPEG|JPG|PNG)");
+
+    private static final String IMAGE_BATTLE = "Image Battle ";
+
+    private static final String CSS_FILE = "style.css";
 
     private static Logger log = LogManager.getLogger();
 
@@ -127,25 +129,14 @@ public class ImageBattleApplication extends Application {
 
 	gridPane.getChildren().addAll(label, imagesButton, musicButton);
 
-	Function<String, Predicate<File>> fileNameRegexChecker = regex -> {
-	    Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
-	    return file -> {
-		return pattern.matcher(file.getName()).matches();
-	    };
-	};
-
 	musicButton.setOnAction(event -> {
-	    log.info("music");
-	    String regex = ".*\\.(MP3|OGG)";
-	    Predicate<File> filePredicate = fileNameRegexChecker.apply(regex);
-	    showDirectoryChooser(filePredicate, MusicBattleScene::createBattleScene,
+	    log.info("battle type: music");
+	    showDirectoryChooser(musicPredicate, MusicBattleScene::createBattleScene,
 		    MusicRankingScene::createRankingScene);
 	});
 	imagesButton.setOnAction(event -> {
-	    log.info("images");
-	    String regex = ".*\\.(BMP|GIF|JPEG|JPG|PNG)";
-	    Predicate<File> filePredicate = fileNameRegexChecker.apply(regex);
-	    showDirectoryChooser(filePredicate, BattleScene::createBattleScene, RankingScene::createRankingScene);
+	    log.info("battle type: images");
+	    showDirectoryChooser(imagePredicate, BattleScene::createBattleScene, RankingScene::createRankingScene);
 	});
 
 	Scene battleKindChooserScene = new Scene(gridPane);
@@ -251,6 +242,13 @@ public class ImageBattleApplication extends Application {
     private void showRatingScene() {
 	_stage.setScene(ratingScene);
 	setStageLayout();
+    }
+
+    private static Predicate<File> createFileRegexChecker(String regex) {
+	Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
+	return file -> {
+	    return pattern.matcher(file.getName()).matches();
+	};
     }
 
     public static void main(String[] args) {
