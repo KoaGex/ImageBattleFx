@@ -36,8 +36,8 @@ final class MusicBattleScene extends Scene {
     private static Logger log = LogManager.getLogger();
 
     private final ImageBattleFolder imageBattleFolder;
-    private final BattleMusicView imageViewLeft;
-    private final BattleMusicView imageViewRight;
+    private final BattleMusicView musicViewLeft;
+    private final BattleMusicView musicViewRight;
     private File fileLeft;
     private File fileRight;
 
@@ -89,8 +89,20 @@ final class MusicBattleScene extends Scene {
 	StackPane.setAlignment(switchSceneButton, Pos.TOP_RIGHT);
 	StackPane.setMargin(switchSceneButton, new Insets(25, 15, 0, 0));
 
-	imageViewLeft = new BattleMusicView(() -> displayNextImages(fileLeft, fileRight));
-	imageViewRight = new BattleMusicView(() -> displayNextImages(fileRight, fileLeft));
+	musicViewLeft = new BattleMusicView(() -> displayNextImages(fileLeft, fileRight));
+	musicViewRight = new BattleMusicView(() -> displayNextImages(fileRight, fileLeft));
+
+	// One finishes => continue with the other song.
+	musicViewLeft.setOnEndOfMedia(() -> {
+	    musicViewLeft.reset();
+	    musicViewLeft.stop();
+	    musicViewRight.stopResetAndPlay();
+	});
+	musicViewRight.setOnEndOfMedia(() -> {
+	    musicViewRight.reset();
+	    musicViewRight.stop();
+	    musicViewLeft.stopResetAndPlay();
+	});
 
 	Function<String, Function<Runnable, Button>> creatButton2 = s -> run -> createButton(s, run);
 
@@ -169,15 +181,15 @@ final class MusicBattleScene extends Scene {
 
 	displayNextImages(null, null);
 
-	hBox.getChildren().add(imageViewLeft);
-	hBox.getChildren().add(imageViewRight);
-	HBox.setHgrow(imageViewLeft, Priority.ALWAYS);
-	HBox.setHgrow(imageViewRight, Priority.ALWAYS);
+	hBox.getChildren().add(musicViewLeft);
+	hBox.getChildren().add(musicViewRight);
+	HBox.setHgrow(musicViewLeft, Priority.ALWAYS);
+	HBox.setHgrow(musicViewRight, Priority.ALWAYS);
 	StackPane.setMargin(hBox, new Insets(80, 15, 15, 15));
 
 	hBox.setAlignment(Pos.CENTER);
-	HBox.setMargin(imageViewLeft, new Insets(30));
-	HBox.setMargin(imageViewRight, new Insets(30));
+	HBox.setMargin(musicViewLeft, new Insets(30));
+	HBox.setMargin(musicViewRight, new Insets(30));
 
 	setOnKeyPressed(keyEvent -> {
 
@@ -240,8 +252,8 @@ final class MusicBattleScene extends Scene {
 	    fileLeft = next.getKey();
 	    fileRight = next.getValue();
 
-	    imageViewLeft.setNewFile(fileLeft);
-	    imageViewRight.setNewFile(fileRight);
+	    musicViewLeft.setNewFile(fileLeft);
+	    musicViewRight.setNewFile(fileRight);
 
 	} catch (BattleFinishedException e) {
 	    imageBattleFolder.setFinished(true);
