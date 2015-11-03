@@ -1,11 +1,15 @@
 package org.imagebattle;
 
 import java.io.File;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.stream.Stream;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -134,4 +138,42 @@ public class TransitiveDiGraph2 extends SimpleDirectedGraph<File, DefaultEdge> {
 		entry.fixed = vertexSet().size() - 1 == entry.wins + entry.loses;
 		return entry;
 	}
+
+	/**
+	 * @return The resulting stream of {@link #getCandidateStream(Collection)} when using {@link #vertexSet()}.
+	 */
+	Stream<Pair<File, File>> getCandidateStream() {
+		Set<File> vertexSet = this.vertexSet();
+		return getCandidateStream(vertexSet);
+	}
+
+	/**
+	 * @param vertexSubset
+	 *            Must be a subset of {@link #vertexSet()}. The result Stream will only contain pairs with elements of
+	 *            this subset.
+	 * @return A {@link Stream} of {@link Pair} representing missing edges in the graph. If the Stream contains pair
+	 *         (a,b) it does not contain (b,a).
+	 */
+	Stream<Pair<File, File>> getCandidateStream(Collection<File> vertexSubset) {
+
+		if (!vertexSet().containsAll(vertexSubset)) {
+			throw new IllegalArgumentException(
+					"the given vertexSubset " + vertexSubset + "  ist not a subset of vertexSet!");
+		}
+
+		Stream<Pair<File, File>> candidatesStream = null;
+
+		// multiple choosing algorithms will need the candidates
+		candidatesStream = vertexSubset.stream() //
+				.flatMap(from -> vertexSubset.stream() //
+						.filter(to -> !this.containsAnyEdge(from, to))//
+						.filter(to -> !Objects.equals(to, from)) //
+						// graph does not allow loops
+						.filter(to -> Comparator.comparing(File::getAbsolutePath).compare(to, from) > 0) //
+						// avoid having candidates a-b and b-a
+						.map(to -> new Pair<File, File>(from, to))//
+		);
+		return candidatesStream;
+	}
+
 }
