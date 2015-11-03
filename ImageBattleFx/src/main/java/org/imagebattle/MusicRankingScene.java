@@ -1,14 +1,11 @@
 package org.imagebattle;
 
-import java.io.IOException;
+import java.io.File;
 import java.util.List;
 import java.util.function.Function;
 
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.farng.mp3.MP3File;
-import org.farng.mp3.TagException;
 
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.ObservableList;
@@ -76,23 +73,24 @@ final class MusicRankingScene extends Scene {
 	});
 	columns.add(ignoredColumn);
 
+	// helper functions for mp3 tag reading
+	Function<ResultListEntry, File> f = rle -> rle.file;
+	Function<ResultListEntry, MusicFile> toMusicFile = f.andThen(MusicFile::create);
+
 	// artist
-	TableColumn<ResultListEntry, String> artistColumn = createColumn("Artist", rle -> {
-	    try {
-		MP3File mp3File = new MP3File(rle.file);
-		if (mp3File.hasID3v1Tag()) {
-		    return mp3File.getID3v1Tag().getAlbum();
-		}
-		if (mp3File.hasID3v2Tag()) {
-		    return mp3File.getID3v2Tag().getLeadArtist();
-		}
-		return "";
-	    } catch (IOException | TagException e) {
-		log.catching(Level.DEBUG, e);
-		return "";
-	    }
-	});
+	TableColumn<ResultListEntry, String> artistColumn = createColumn("Artist",
+		toMusicFile.andThen(MusicFile::getArtist));
 	columns.add(artistColumn);
+
+	// Album
+	TableColumn<ResultListEntry, String> albumColumn = createColumn("Album",
+		toMusicFile.andThen(MusicFile::getAlbum));
+	columns.add(albumColumn);
+
+	// Title
+	TableColumn<ResultListEntry, String> titleColumn = createColumn("Title",
+		toMusicFile.andThen(MusicFile::getTitle));
+	columns.add(titleColumn);
 
 	ObservableList<ResultListEntry> items = table.getItems();
 	items.addAll(resultList);
