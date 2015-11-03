@@ -101,7 +101,7 @@ public class TransitiveDiGraph2 extends SimpleDirectedGraph<File, DefaultEdge> {
 	int nodeCount = super.vertexSet().size();
 	int ofMaximal = nodeCount * (nodeCount - 1) / 2;
 	double percent = Double.valueOf(edgeCountNew) / Double.valueOf(ofMaximal);
-	log.debug("added {} and now have {} edges of {} possible. In Percent: {}", edgesAdded, edgeCountNew, ofMaximal,
+	log.trace("added {} and now have {} edges of {} possible. In Percent: {}", edgesAdded, edgeCountNew, ofMaximal,
 		percent);
 
 	return result;
@@ -127,11 +127,11 @@ public class TransitiveDiGraph2 extends SimpleDirectedGraph<File, DefaultEdge> {
     }
 
     ResultListEntry fileToResultEntry(File i) {
-        ResultListEntry entry = new ResultListEntry();
-        entry.file = i;
-        entry.wins = outDegreeOf(i);
-        entry.loses = inDegreeOf(i);
-        entry.fixed = vertexSet().size() - 1 == entry.wins + entry.loses;
-        return entry;
+	ResultListEntry entry = new ResultListEntry();
+	entry.file = i;
+	entry.wins = outDegreeOf(i);
+	entry.loses = inDegreeOf(i);
+	entry.fixed = vertexSet().size() - 1 == entry.wins + entry.loses;
+	return entry;
     }
 }
