@@ -25,9 +25,9 @@ public class RankingTopDownCandidateChooser extends ACandidateChooser {
     Pair<File, File> doGetNextCandidates() {
 	Pair<File, File> result = null;
 
-	Comparator<File> winnerFirstComparator = Comparator.comparing(graph2::outDegreeOf).reversed()
-		.thenComparing(Comparator.comparing(graph2::inDegreeOf));
-	List<File> resultList = graph2.vertexSet().stream() //
+	Comparator<File> winnerFirstComparator = Comparator.comparing(graph::outDegreeOf).reversed()
+		.thenComparing(Comparator.comparing(graph::inDegreeOf));
+	List<File> resultList = graph.vertexSet().stream() //
 		.sorted(winnerFirstComparator)//
 		.collect(Collectors.toList());
 
@@ -38,7 +38,7 @@ public class RankingTopDownCandidateChooser extends ACandidateChooser {
 	    try {
 		File file1 = resultList.get(i);
 		File file2 = resultList.get(i + step);
-		if (!graph2.containsEdge(file1, file2) && !graph2.containsEdge(file2, file1)) {
+		if (!graph.containsEdge(file1, file2) && !graph.containsEdge(file2, file1)) {
 		    keepSearching = false;
 		    result = new Pair<File, File>(file1, file2);
 		}

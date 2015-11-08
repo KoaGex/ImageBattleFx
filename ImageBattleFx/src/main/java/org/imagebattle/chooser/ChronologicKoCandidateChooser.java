@@ -30,7 +30,7 @@ public class ChronologicKoCandidateChooser extends ACandidateChooser {
 
 	@Override
 	Pair<File, File> doGetNextCandidates() {
-		Set<File> vertexSet = graph2.vertexSet();
+		Set<File> vertexSet = graph.vertexSet();
 		if (sortedFiles.isEmpty()) {
 			vertexSet.stream()//
 					.sorted(Comparator.comparing(this::readExif))//
@@ -45,7 +45,7 @@ public class ChronologicKoCandidateChooser extends ACandidateChooser {
 			int tempInDegree = inDegree; // for lambda loop final
 
 			sortedFiles.stream()//
-					.filter(file -> graph2.inDegreeOf(file) == tempInDegree)// TODO what if there is only one with zero losses?
+					.filter(file -> graph.inDegreeOf(file) == tempInDegree)// TODO what if there is only one with zero losses?
 					.forEach(currentLevel::add);
 
 			inDegree++; // in case only one is found, raise the number

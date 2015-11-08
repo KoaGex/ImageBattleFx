@@ -2,13 +2,9 @@ package org.imagebattle.chooser;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Stream;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -22,87 +18,73 @@ import com.drew.metadata.exif.ExifSubIFDDirectory;
 
 import javafx.util.Pair;
 
+/**
+ * Base class for all candidate choosers.
+ * 
+ * A candidate Chooser is an alogrithm that can find missing edges in the graph and follows a certain strategy.
+ * 
+ * Subclasses only need to implement {@link #doGetNextCandidates()}.
+ * 
+ * @author KoaGex
+ *
+ */
 public abstract class ACandidateChooser {
-    private static Logger log = LogManager.getLogger();
 
-    protected TransitiveDiGraph2 graph2;
+	private static final Logger LOG = LogManager.getLogger();
 
-    ACandidateChooser(TransitiveDiGraph2 pGraph) {
-	graph2 = pGraph;
-    }
+	/**
+	 * Use this graph. It is never null.
+	 */
+	protected final TransitiveDiGraph2 graph;
 
-    final int getCalculatedCandidateCount() {
-	Set<File> vertexSet = graph2.vertexSet();
-	int nodeCount = vertexSet.size();
-	int maxEdgeCount = nodeCount * (nodeCount - 1) / 2;
-	int currentEdgeCount = graph2.edgeSet().size();
-	int calculatedCandidateCount = maxEdgeCount - currentEdgeCount;
-	return calculatedCandidateCount;
-    }
-
-    public final Pair<File, File> getNextCandidates() throws BattleFinishedException {
-	int calculatedCandidateCount = getCalculatedCandidateCount();
-
-	if (calculatedCandidateCount == 0) {
-	    throw new BattleFinishedException();
+	/**
+	 * Constructor.
+	 * 
+	 * @param pGraph
+	 *            Subclasses will use this graph to determine the next candidates.
+	 */
+	ACandidateChooser(TransitiveDiGraph2 pGraph) {
+		graph = Objects.requireNonNull(pGraph);
 	}
 
-	return doGetNextCandidates();
-    }
+	/**
+	 * Hook. This is the only method that should be overridden by subclasses. This should not be used directly from the
+	 * outside. Who ever uses a candidate chooser should call {@link #getNextCandidates()}.
+	 * 
+	 * @return any available candidate pair.
+	 * @throws BattleFinishedException
+	 *             when no candidates are left. TODO should not only {@link #doGetNextCandidates()} throw this?
+	 */
+	abstract Pair<File, File> doGetNextCandidates();
 
-    abstract Pair<File, File> doGetNextCandidates() throws BattleFinishedException;
+	/**
+	 * @return {@link Optional#empty()} if there are no more candidates in the graph. This means the battle is finished.
+	 */
+	public final Optional<Pair<File, File>> getNextCandidates() {
+		int calculatedCandidateCount = graph.getCalculatedCandidateCount();
 
-    Stream<Pair<File, File>> getCandidateStream(Collection<File> vertexSubset) {
-
-	Stream<Pair<File, File>> candidatesStream = null;
-
-	// multiple choosing algorithms will need the candidates
-	candidatesStream = vertexSubset.stream() //
-		.flatMap(from -> vertexSubset.stream() //
-			.filter(to -> !graph2.containsEdge(from, to)) // TODO
-								      // double
-								      // check
-								      // necessary?
-								      // overwrite
-								      // maybe
-			.filter(to -> !graph2.containsEdge(to, from)) //
-			.filter(to -> !Objects.equals(to, from)) // graph does
-								 // not allow
-								 // loops
-			.filter(to -> Comparator.comparing(File::getAbsolutePath).compare(to, from) > 0) // avoid
-													 // having
-													 // candidates
-													 // a-b
-													 // and
-													 // b-a
-			.map(to -> new Pair<File, File>(from, to)));
-	return candidatesStream;
-    }
-
-    Stream<Pair<File, File>> getCandidateStream() {
-	Set<File> vertexSet = graph2.vertexSet();
-	return getCandidateStream(vertexSet);
-    }
-
-    final Date readExif(File pFile) {
-	Date result = null;
-
-	try {
-	    Metadata metadata = ImageMetadataReader.readMetadata(pFile);
-	    // obtain the Exif directory
-	    Date date = Optional.ofNullable(metadata)//
-		    .map(meta -> meta.getFirstDirectoryOfType(ExifSubIFDDirectory.class))//
-		    .map(dir -> dir.getDate(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL))//
-		    .orElse(new Date(pFile.lastModified()));
-
-	    // query the tag's value
-	    log.trace(pFile.getAbsolutePath() + " : " + date);
-
-	    result = date;
-	} catch (ImageProcessingException | IOException e) {
-	    log.error("exception", e);
+		return (calculatedCandidateCount == 0) ? Optional.empty() : Optional.of(doGetNextCandidates());
 	}
-	return result;
-    }
+
+	final Date readExif(File pFile) {
+		Date result = null;
+
+		try {
+			Metadata metadata = ImageMetadataReader.readMetadata(pFile);
+			// obtain the Exif directory
+			Date date = Optional.ofNullable(metadata)//
+					.map(meta -> meta.getFirstDirectoryOfType(ExifSubIFDDirectory.class))//
+					.map(dir -> dir.getDate(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL))//
+					.orElse(new Date(pFile.lastModified()));
+
+			// query the tag's value
+			LOG.trace(pFile.getAbsolutePath() + " : " + date);
+
+			result = date;
+		} catch (ImageProcessingException | IOException e) {
+			LOG.error("exception", e);
+		}
+		return result;
+	}
 
 }

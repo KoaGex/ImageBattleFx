@@ -21,10 +21,10 @@ public class RandomCandidateChooser extends ACandidateChooser {
 	Pair<File, File> doGetNextCandidates() {
 		long start = System.currentTimeMillis();
 
-		int candidateCount = getCalculatedCandidateCount();
+		int candidateCount = graph.getCalculatedCandidateCount();
 		Random random = new Random();
 		int nextInt = random.nextInt(candidateCount);
-		Pair<File, File> pair = getCandidateStream().skip(nextInt).findAny().get();
+		Pair<File, File> pair = graph.getCandidateStream().skip(nextInt).findAny().get();
 
 		long end = System.currentTimeMillis();
 		log.trace("time needed: {}", end - start);

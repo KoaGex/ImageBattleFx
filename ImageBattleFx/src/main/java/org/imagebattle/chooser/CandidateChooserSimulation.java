@@ -3,11 +3,11 @@ package org.imagebattle.chooser;
 import java.io.File;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.imagebattle.BattleFinishedException;
 import org.imagebattle.ImageBattleApplication;
 import org.imagebattle.ImageBattleFolder;
 
@@ -18,49 +18,51 @@ import javafx.util.Pair;
  *
  */
 public class CandidateChooserSimulation {
-    private static Logger log = LogManager.getLogger();
-    // TODO turn this into a test?
+	private static Logger log = LogManager.getLogger();
+	// TODO turn this into a test?
 
-    public static void main(String[] args) {
-	File funPicsDir = new File("D:\\bilder\\fun pics");
-	File imageBattleDat = new File(funPicsDir, "imageBattle.dat");
-	imageBattleDat.delete();
+	public static void main(String[] args) {
+		File funPicsDir = new File("D:\\bilder\\fun pics");
+		File imageBattleDat = new File(funPicsDir, "imageBattle.dat");
+		imageBattleDat.delete();
 
-	String regex = ".*\\.(BMP|GIF|JPEG|JPG|PNG)";
-	boolean recursive = false;
-	ImageBattleFolder folder = ImageBattleFolder.readOrCreate(funPicsDir, ImageBattleApplication.imagePredicate,
-		recursive);
+		String regex = ".*\\.(BMP|GIF|JPEG|JPG|PNG)";
+		boolean recursive = false;
+		ImageBattleFolder folder = ImageBattleFolder.readOrCreate(funPicsDir, ImageBattleApplication.imagePredicate,
+				recursive);
 
-	List<File> files = folder.getResultList().stream().map(entry -> entry.file).collect(Collectors.toList());
+		List<File> files = folder.getResultList().stream().map(entry -> entry.file).collect(Collectors.toList());
 
-	/*
-	 * create one order of the files that should for this test represent the
-	 * real order. First is the best and last the worst.
-	 */
-	Collections.shuffle(files);
+		/*
+		 * create one order of the files that should for this test represent the
+		 * real order. First is the best and last the worst.
+		 */
+		Collections.shuffle(files);
 
-	// change this string to switch chooser
-	String chooser = "MaxNewEdges";
+		// change this string to switch chooser
+		String chooser = "MaxNewEdges";
 
-	folder.setChoosingAlgorithm(chooser);
-	log.warn("start with chooser: {}  ", chooser);
+		folder.setChoosingAlgorithm(chooser);
+		log.warn("start with chooser: {}  ", chooser);
 
-	int counter = 0;
-	long start = System.currentTimeMillis();
-	boolean finished = false;
-	while (!finished) {
-	    try {
-		Pair<File, File> nextToCompare = folder.getNextToCompare();
-		File key = nextToCompare.getKey();
-		File value = nextToCompare.getValue();
-		int keyIndex = files.indexOf(key);
-		int valueIndex = files.indexOf(value);
-		boolean keyIsBetter = keyIndex < valueIndex;
-		File winner = keyIsBetter ? key : value;
-		File loser = keyIsBetter ? value : key;
-		folder.makeDecision(winner, loser);
-		counter++;
-	    } catch (BattleFinishedException e) {
+		int counter = 0;
+		long start = System.currentTimeMillis();
+		boolean finished = false;
+		Optional<Pair<File, File>> nextToCompare;
+		nextToCompare = folder.getNextToCompare();
+		while (nextToCompare.isPresent()) {
+			nextToCompare = folder.getNextToCompare();
+			Pair<File, File> pair = nextToCompare.get();
+			File key = pair.getKey();
+			File value = pair.getValue();
+			int keyIndex = files.indexOf(key);
+			int valueIndex = files.indexOf(value);
+			boolean keyIsBetter = keyIndex < valueIndex;
+			File winner = keyIsBetter ? key : value;
+			File loser = keyIsBetter ? value : key;
+			folder.makeDecision(winner, loser);
+			counter++;
+		}
 		long end = System.currentTimeMillis();
 		log.warn("chooser: {}   decisions: {}     time: {}", chooser, counter, end - start);
 
@@ -82,8 +84,6 @@ public class CandidateChooserSimulation {
 		// TODO check that result list is the same as files
 
 		finished = true;
-	    }
 	}
-    }
 
 }

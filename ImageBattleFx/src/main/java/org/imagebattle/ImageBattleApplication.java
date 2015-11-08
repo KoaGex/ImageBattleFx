@@ -60,7 +60,7 @@ public class ImageBattleApplication extends Application {
 	// TODO can the process be speed up even more for many images ( >200 ) ?
 	// TODO context menu: delete on file system
 	// TODO Diagrams of wins and loses to display total progress
-	// TODO compare videos, music
+	// TODO compare videos
 	// TODO all actions as icon buttons
 	// TODO move decision count into one new dialog together with edge count,
 	// and other information about how far the battle has come.
@@ -74,11 +74,11 @@ public class ImageBattleApplication extends Application {
 	// TODO rewrite using spark for a more centralized way => how to handle
 	// multiple users rating the same images? each has own graph but candidate
 	// choosing looks at others graphs
-	// TODO Exception -> error message box?
 	// TODO favorite images (star/heart) for photo album? how to display in results?
 	// TODO take command line args to directly start image/music and provide a directory.
 	// TODO build: package with jre, maybe javapackager?
-	static final Predicate<File> musicPredicate = createFileRegexChecker(".*\\.(MP3|OGG)");
+	// TODO Use D3.js and WebView to display the current graph (to help users understand the concept and to debug )
+	private static final Predicate<File> musicPredicate = createFileRegexChecker(".*\\.(MP3|OGG)");
 
 	public static final Predicate<File> imagePredicate = createFileRegexChecker(".*\\.(BMP|GIF|JPEG|JPG|PNG)");
 
@@ -172,7 +172,7 @@ public class ImageBattleApplication extends Application {
 
 		directoryChooserScene.getStylesheets().add(CSS_FILE);
 
-		Dimension screenSize = getScreenSize();
+		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 		_stage.setWidth(screenSize.getWidth() - 100);
 		_stage.setHeight(screenSize.getHeight() - 100);
 		_stage.setResizable(true);
@@ -205,7 +205,7 @@ public class ImageBattleApplication extends Application {
 		_stage.show();
 
 		_stage.sizeToScene();
-		Dimension screenSize = getScreenSize();
+		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 		screenHeight = screenSize.getHeight();
 		screenWidth = screenSize.getWidth();
 
@@ -216,10 +216,6 @@ public class ImageBattleApplication extends Application {
 		resultsScene.getStylesheets().add(CSS_FILE);
 		ratingScene.getStylesheets().add(CSS_FILE);
 
-	}
-
-	static Dimension getScreenSize() {
-		return Toolkit.getDefaultToolkit().getScreenSize();
 	}
 
 	private void setStageLayout() {
@@ -267,7 +263,6 @@ public class ImageBattleApplication extends Application {
 			showErrorDialog(e);
 		} else {
 			System.err.println("An unexpected error occurred in " + t);
-
 		}
 	}
 

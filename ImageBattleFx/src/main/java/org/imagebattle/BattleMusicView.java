@@ -21,7 +21,7 @@ import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
 import javafx.util.Duration;
 
-final class BattleMusicView extends GridPane {
+final class BattleMusicView extends GridPane implements IMediaView {
 	private static Logger log = LogManager.getLogger();
 
 	private MediaPlayer player;
@@ -149,7 +149,8 @@ final class BattleMusicView extends GridPane {
 		setHgrow(pathLabel, Priority.ALWAYS);
 	}
 
-	void setNewFile(File musicFile) {
+	@Override
+	public void setNewFile(File musicFile) {
 		log.debug(musicFile);
 
 		if (player != null) {

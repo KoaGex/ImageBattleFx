@@ -28,28 +28,28 @@ public class BiSectionCandidateChooser extends ACandidateChooser {
 
     @Override
     Pair<File, File> doGetNextCandidates() {
-	Function<File, Integer> degreeOf = file -> graph2.inDegreeOf(file) + graph2.outDegreeOf(file);
-	Function<File, Integer> toWinLoseDifference = file -> graph2.outDegreeOf(file) - graph2.inDegreeOf(file);
+	Function<File, Integer> degreeOf = file -> graph.inDegreeOf(file) + graph.outDegreeOf(file);
+	Function<File, Integer> toWinLoseDifference = file -> graph.outDegreeOf(file) - graph.inDegreeOf(file);
 
 	// sorted from best to worst
-	List<File> rankingList = graph2.vertexSet()//
+	List<File> rankingList = graph.vertexSet()//
 		.stream()//
 		.sorted(Comparator.comparing(toWinLoseDifference, Comparator.reverseOrder()))//
 		.collect(Collectors.toList());
 
 	Function<File, Integer> toWorstWinner = file -> {
-	    return graph2//
+	    return graph//
 		    .incomingEdgesOf(file).stream()//
-		    .map(graph2::getEdgeSource)//
+		    .map(graph::getEdgeSource)//
 		    .mapToInt(rankingList::indexOf)//
 		    .max()//
 		    .orElse(0);
 	};
 
 	Function<File, Integer> toBestLoser = file -> {
-	    return graph2//
+	    return graph//
 		    .outgoingEdgesOf(file).stream()//
-		    .map(graph2::getEdgeTarget)//
+		    .map(graph::getEdgeTarget)//
 		    .mapToInt(rankingList::indexOf)//
 		    .min()//
 		    .orElse(rankingList.size() - 1);
@@ -61,8 +61,8 @@ public class BiSectionCandidateChooser extends ACandidateChooser {
 
 	// TODO improve by choosing images with big worstWinner-bestLooser
 	// distance?
-	File minimumDegreeCandidate = graph2.vertexSet().stream()//
-		.filter(file -> degreeOf.apply(file) < graph2.vertexSet().size() - 1)//
+	File minimumDegreeCandidate = graph.vertexSet().stream()//
+		.filter(file -> degreeOf.apply(file) < graph.vertexSet().size() - 1)//
 		.sorted(Comparator.comparing(toIntervalLength, Comparator.reverseOrder()))//
 		.findFirst()//
 		.get();
@@ -78,8 +78,8 @@ public class BiSectionCandidateChooser extends ACandidateChooser {
 	// get the candidate that has the lowest difference to medium in
 	// rankingList
 	File otherCandidate = rankingList.stream()//
-		.filter(file -> !graph2.containsEdge(file, minimumDegreeCandidate))//
-		.filter(file -> !graph2.containsEdge(minimumDegreeCandidate, file))//
+		.filter(file -> !graph.containsEdge(file, minimumDegreeCandidate))//
+		.filter(file -> !graph.containsEdge(minimumDegreeCandidate, file))//
 		.filter(file -> !minimumDegreeCandidate.equals(file))//
 		.sorted(Comparator.comparing(file -> Math.abs(medium - rankingList.indexOf(file))))//
 		.findFirst()//

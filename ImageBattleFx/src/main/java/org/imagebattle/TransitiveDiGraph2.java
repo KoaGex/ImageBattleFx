@@ -19,7 +19,7 @@ import org.jgrapht.graph.SimpleDirectedGraph;
 import javafx.util.Pair;
 
 public class TransitiveDiGraph2 extends SimpleDirectedGraph<File, DefaultEdge> {
-	private static Logger log = LogManager.getLogger();
+	private static Logger LOG = LogManager.getLogger();
 
 	/**
 	 * Constructor
@@ -46,18 +46,18 @@ public class TransitiveDiGraph2 extends SimpleDirectedGraph<File, DefaultEdge> {
 
 		DefaultEdge result = null;
 
-		log.trace(sourceVertex.getName() + " won against " + targetVertex.getName());
+		LOG.trace(sourceVertex.getName() + " won against " + targetVertex.getName());
 
 		BiConsumer<File, File> addEdge = (from, to) -> {
 			boolean edgeExists = super.containsEdge(from, to) || super.containsEdge(to, from);
 			if (edgeExists) {
-				log.trace("edge already set:" + from.getName() + " -> " + to.getName());
+				LOG.trace("edge already set:" + from.getName() + " -> " + to.getName());
 			} else {
 				// use super. without it would quickly result in an infinite
 				// recursive loop
 				DefaultEdge newEdge = super.addEdge(from, to);
 				// TODO use the return value ?!
-				log.trace("add edge {} -> {} . newEdge: {}", from.getName(), to.getName(), newEdge);
+				LOG.trace("add edge {} -> {} . newEdge: {}", from.getName(), to.getName(), newEdge);
 				// result = (result == null) ? result2 : result; TODO after
 				// adding use getEdge ?
 			}
@@ -80,23 +80,17 @@ public class TransitiveDiGraph2 extends SimpleDirectedGraph<File, DefaultEdge> {
 			// b -> c -> d
 			super.outgoingEdgesOf(c).stream()//
 					.map(super::getEdgeTarget) //
-					.filter(d -> !super.containsEdge(b, d) && !super.containsEdge(d, b)) // TODO
-					// double
-					// check
-					// needed?
+					.filter(d -> !containsAnyEdge(b, d))//
 					.map(d -> new Pair<File, File>(b, d))//
-					.peek(log::trace) //
+					.peek(LOG::trace) //
 					.forEach(queue::add);
 
 			// a -> b -> c
 			super.incomingEdgesOf(b).stream()//
 					.map(super::getEdgeSource) //
-					.filter(a -> !super.containsEdge(c, a) && !super.containsEdge(a, c)) // TODO
-					// double
-					// check
-					// needed?
+					.filter(a -> !containsAnyEdge(c, a))//
 					.map(a -> new Pair<File, File>(a, c))//
-					.peek(log::trace) //
+					.peek(LOG::trace) //
 					.forEach(queue::add);
 		}
 
@@ -105,7 +99,7 @@ public class TransitiveDiGraph2 extends SimpleDirectedGraph<File, DefaultEdge> {
 		int nodeCount = super.vertexSet().size();
 		int ofMaximal = nodeCount * (nodeCount - 1) / 2;
 		double percent = Double.valueOf(edgeCountNew) / Double.valueOf(ofMaximal);
-		log.trace("added {} and now have {} edges of {} possible. In Percent: {}", edgesAdded, edgeCountNew, ofMaximal,
+		LOG.trace("added {} and now have {} edges of {} possible. In Percent: {}", edgesAdded, edgeCountNew, ofMaximal,
 				percent);
 
 		return result;
@@ -142,7 +136,7 @@ public class TransitiveDiGraph2 extends SimpleDirectedGraph<File, DefaultEdge> {
 	/**
 	 * @return The resulting stream of {@link #getCandidateStream(Collection)} when using {@link #vertexSet()}.
 	 */
-	Stream<Pair<File, File>> getCandidateStream() {
+	public final Stream<Pair<File, File>> getCandidateStream() {
 		Set<File> vertexSet = this.vertexSet();
 		return getCandidateStream(vertexSet);
 	}
@@ -154,7 +148,7 @@ public class TransitiveDiGraph2 extends SimpleDirectedGraph<File, DefaultEdge> {
 	 * @return A {@link Stream} of {@link Pair} representing missing edges in the graph. If the Stream contains pair
 	 *         (a,b) it does not contain (b,a).
 	 */
-	Stream<Pair<File, File>> getCandidateStream(Collection<File> vertexSubset) {
+	public final Stream<Pair<File, File>> getCandidateStream(Collection<File> vertexSubset) {
 
 		if (!vertexSet().containsAll(vertexSubset)) {
 			throw new IllegalArgumentException(
@@ -176,4 +170,18 @@ public class TransitiveDiGraph2 extends SimpleDirectedGraph<File, DefaultEdge> {
 		return candidatesStream;
 	}
 
+	/**
+	 * @return How many candidate pairs should be left in the {@link #graph}.
+	 */
+	public final int getCalculatedCandidateCount() {
+		Set<File> vertexSet = this.vertexSet();
+		int nodeCount = vertexSet.size();
+		int currentEdgeCount = this.edgeSet().size();
+
+		int maxEdgeCount = nodeCount * (nodeCount - 1) / 2;
+		int calculatedCandidateCount = maxEdgeCount - currentEdgeCount;
+
+		LOG.trace(calculatedCandidateCount);
+		return calculatedCandidateCount;
+	}
 }

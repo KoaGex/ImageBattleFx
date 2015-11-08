@@ -6,7 +6,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.NoSuchElementException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -15,20 +16,13 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import javafx.beans.property.DoubleProperty;
 import javafx.collections.ObservableList;
-import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
-import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
-import javafx.scene.control.ProgressBar;
-import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
@@ -36,7 +30,6 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
-import javafx.util.Pair;
 
 /**
  * This is where two images are displayed next to each other and the user can click one of them. Then the next pair is
@@ -45,79 +38,28 @@ import javafx.util.Pair;
  * @author KoaGex
  *
  */
-final class BattleScene extends Scene {
+final class BattleScene extends ABattleScene<BattleImageView> {
 
-	private static Logger LOG = LogManager.getLogger();
-
-	private final ImageBattleFolder imageBattleFolder;
-	private final BattleImageView imageViewLeft;
-	private final BattleImageView imageViewRight;
-	private File fileLeft;
-	private File fileRight;
-
-	private final DoubleProperty progressProperty;
+	private static final Logger LOG = LogManager.getLogger();
 
 	static BattleScene createBattleScene(ImageBattleFolder folder, Runnable switchSceneAction) {
 		StackPane switchSceneStackPane = new StackPane();
 		return new BattleScene(switchSceneStackPane, folder, switchSceneAction);
 	}
 
+	@Override
+	void doInitializeMediaViews() {
+		mediaLeft = new BattleImageView();
+		mediaRight = new BattleImageView();
+	}
+
 	private BattleScene(StackPane switchSceneStackPane, ImageBattleFolder folder, Runnable switchSceneAction) {
-		super(switchSceneStackPane);
-		imageBattleFolder = folder;
+		super(switchSceneStackPane, folder, switchSceneAction);
 
-		HBox hBox = new HBox();
+		Label resolutionLabelLeft = mediaLeft.getResolutionLabel();
 
-		Menu choosingMenu = new Menu("Choosing Algorithm");
-
-		ObservableList<MenuItem> choosingMenuItems = choosingMenu.getItems();
-		Function<String, MenuItem> createChoosingMenuItem = name -> {
-			MenuItem menuItem = new MenuItem(name);
-			menuItem.setOnAction(event -> folder.setChoosingAlgorithm(name));
-			return menuItem;
-		};
-		folder.getChoosingAlgorithms().stream().map(createChoosingMenuItem).forEach(choosingMenuItems::add);
-
-		// progressbar
-		ProgressBar progressBar = new ProgressBar();
-		progressBar.setMinWidth(100d); // high with causes text to become "..."
-		progressProperty = progressBar.progressProperty();
-		Menu progressMenu = new Menu();
-		Tooltip.install(progressBar, new Tooltip("progress of the whole image battle"));
-		/*
-		 * i don't know a good way to use Math.round with property.bind => use
-		 * listener
-		 */
-		progressProperty.addListener((prop, old, newValue) -> {
-			double progress = progressProperty.get();
-			double commaDigitFactor = 1000d;
-			double percent = progress * 100 * commaDigitFactor;
-			percent = Math.round(percent) / commaDigitFactor;
-			progressMenu.textProperty().set(percent + "%");
-		});
-
-		progressMenu.setGraphic(progressBar);
-
-		MenuBar menuBar = new MenuBar(choosingMenu, progressMenu);
-		StackPane.setAlignment(menuBar, Pos.TOP_CENTER);
-
-		Button switchSceneButton = createButton("Ranking", switchSceneAction);
-		StackPane.setAlignment(switchSceneButton, Pos.TOP_RIGHT);
-		StackPane.setMargin(switchSceneButton, new Insets(25, 15, 0, 0));
-
-		imageViewLeft = new BattleImageView();
-		imageViewRight = new BattleImageView();
-
-		Label resolutionLabelLeft = imageViewLeft.getResolutionLabel();
-
-		Label resolutionLabelRight = imageViewRight.getResolutionLabel();
+		Label resolutionLabelRight = mediaRight.getResolutionLabel();
 		StackPane.setAlignment(resolutionLabelRight, Pos.BOTTOM_RIGHT);
-
-		Function<String, Function<Runnable, Button>> creatButton2 = s -> run -> createButton(s, run);
-
-		Function<Supplier<File>, Runnable> ignoreAction = supplier -> () -> ignoreAndShowNext(supplier.get());
-		Function<Runnable, Button> createButton = creatButton2.apply("ignore");
-		Function<Supplier<File>, Button> createIgnoreButton = ignoreAction.andThen(createButton);
 
 		ImageView fullSizeImage = new ImageView();
 		fullSizeImage.setPreserveRatio(true);
@@ -125,6 +67,8 @@ final class BattleScene extends Scene {
 		fullSizeImage.fitWidthProperty().bind(this.widthProperty());
 
 		Runnable removeFocusImage = () -> switchSceneStackPane.getChildren().remove(fullSizeImage);
+		doBeforeDisplayNext = removeFocusImage;
+
 		fullSizeImage.setOnMouseClicked(event -> removeFocusImage.run());
 
 		Function<Supplier<File>, Supplier<Image>> fileToImageSupplier = imageSupplier -> () -> {
@@ -153,11 +97,11 @@ final class BattleScene extends Scene {
 		Runnable maximizeRight = fileSupplierToMaximize.apply(this::getFileRight);
 
 		// zoom buttons
+		Function<String, Function<Runnable, Button>> creatButton2 = s -> run -> createButton(s, run);
 		Function<Runnable, Button> zoomButton = creatButton2.apply("zoom");
 		Button zoomLeft = zoomButton.apply(maximizeLeft);
 		Button zoomRight = zoomButton.apply(maximizeRight);
 
-		Button ignoreLeft = createIgnoreButton.apply(this::getFileLeft);
 		HBox hBoxLeft = new HBox(resolutionLabelLeft, ignoreLeft, zoomLeft);
 		StackPane.setAlignment(hBoxLeft, Pos.BOTTOM_LEFT);
 		hBoxLeft.setAlignment(Pos.BOTTOM_LEFT);
@@ -170,7 +114,6 @@ final class BattleScene extends Scene {
 		// workaround
 		hBoxLeft.setMaxWidth(hBoxWidth);
 
-		Button ignoreRight = createIgnoreButton.apply(this::getFileRight);
 		HBox hBoxRight = new HBox(zoomRight, ignoreRight, resolutionLabelRight);
 		StackPane.setAlignment(hBoxRight, Pos.BOTTOM_RIGHT);
 		hBoxRight.setAlignment(Pos.BOTTOM_RIGHT);
@@ -181,28 +124,16 @@ final class BattleScene extends Scene {
 		// workaround
 		hBoxRight.setMaxWidth(hBoxWidth);
 
-		// ignore both
-		Button ignoreBoth = new Button("ignore both");
-		Runnable ignoreBothAction = () -> {
-			imageBattleFolder.ignoreFile(fileLeft);
-			imageBattleFolder.ignoreFile(fileRight);
-			displayNextImages(null, null);
-		};
-		ignoreBoth.setOnAction(event -> {
-			ignoreBothAction.run();
-		});
-		StackPane.setAlignment(ignoreBoth, Pos.BOTTOM_CENTER);
+		HBox hBox = new HBox();
+		List<HBox> elements = Arrays.asList(hBox, hBoxLeft, hBoxRight);
+		switchSceneStackPane.getChildren().addAll(0, elements);
 
-		switchSceneStackPane.getChildren().addAll(hBox, hBoxLeft, hBoxRight, ignoreBoth, menuBar, switchSceneButton);
-
-		displayNextImages(null, null);
-
-		imageViewLeft.setOnMouseClicked(mouseEvent -> {
+		mediaLeft.setOnMouseClicked(mouseEvent -> {
 			File thisImage = fileLeft;
 			File otherImage = fileRight;
 			imageClicked(mouseEvent, thisImage, otherImage);
 		});
-		imageViewRight.setOnMouseClicked(mouseEvent -> {
+		mediaRight.setOnMouseClicked(mouseEvent -> {
 			File thisImage = fileRight;
 			File otherImage = fileLeft;
 			imageClicked(mouseEvent, thisImage, otherImage);
@@ -211,56 +142,14 @@ final class BattleScene extends Scene {
 		widthProperty().addListener((a, b, c) -> adaptImageSizes());
 		heightProperty().addListener((a, b, c) -> adaptImageSizes());
 
-		hBox.getChildren().add(imageViewLeft);
-		hBox.getChildren().add(imageViewRight);
+		hBox.getChildren().add(mediaLeft);
+		hBox.getChildren().add(mediaRight);
 
 		hBox.setAlignment(Pos.CENTER);
 
-		setOnKeyPressed(keyEvent -> {
-
-			KeyCode code = keyEvent.getCode();
-
-			switch (code) {
-			case LEFT:
-				removeFocusImage.run();
-				displayNextImages(fileLeft, fileRight);
-				break;
-
-			case RIGHT:
-				removeFocusImage.run();
-				displayNextImages(fileRight, fileLeft);
-				break;
-
-			case H:
-				maximizeLeft.run();
-				break;
-
-			case L:
-				maximizeRight.run();
-				break;
-
-			case R:
-				removeFocusImage.run();
-				switchSceneAction.run();
-				break;
-
-			case S: // for skip
-				removeFocusImage.run();
-				displayNextImages(null, null);
-				break;
-			case Y:
-				ignoreAction.apply(this::getFileLeft).run();
-				break;
-			case M:
-				ignoreAction.apply(this::getFileRight).run();
-				break;
-			case V:
-				ignoreBothAction.run();
-				break;
-			default:
-				break;
-			}
-		});
+		// Hotkeys
+		addHotKey(KeyCode.H, maximizeLeft);
+		addHotKey(KeyCode.L, maximizeRight);
 
 		adaptImageSizes();
 	}
@@ -298,41 +187,6 @@ final class BattleScene extends Scene {
 		}
 	}
 
-	private void displayNextImages(File pWinner, File pLoser) {
-		if (pWinner != null && pLoser != null) {
-			LOG.info("winner: {}       loser: {}", pWinner.getName(), pLoser.getName());
-			imageBattleFolder.makeDecision(pWinner, pLoser);
-
-			// persist
-			imageBattleFolder.save();
-		}
-
-		double progress = imageBattleFolder.getProgress();
-		progressProperty.set(progress);
-		LOG.trace("progress: {}", progressProperty.get());
-
-		try {
-			Pair<File, File> next = imageBattleFolder.getNextToCompare();
-			fileLeft = next.getKey();
-			fileRight = next.getValue();
-
-			imageViewLeft.setNewImage(fileLeft);
-			imageViewRight.setNewImage(fileRight);
-
-			adaptImageSizes();
-		} catch (BattleFinishedException e) {
-			// TODO switch the scene and don't let the user come back
-		} catch (NoSuchElementException | FileNotFoundException e) {
-			e.printStackTrace();
-		}
-
-	}
-
-	private void ignoreAndShowNext(File fileToIgnore) {
-		imageBattleFolder.ignoreFile(fileToIgnore);
-		displayNextImages(null, null);
-	}
-
 	/**
 	 * Choose the image sizes i a way that give both images the same amount of pixels
 	 */
@@ -344,11 +198,11 @@ final class BattleScene extends Scene {
 		// window dimensions are 0 if it is not yet displayed
 		if (windowWidth > 0 && windowHeight > 0) {
 
-			Image imageLeft = imageViewLeft.getImage();
+			Image imageLeft = mediaLeft.getImage();
 			double leftWidth = imageLeft.getWidth();
 			double leftHeight = imageLeft.getHeight();
 
-			Image imageRight = imageViewRight.getImage();
+			Image imageRight = mediaRight.getImage();
 			double rightWidth = imageRight.getWidth();
 			double rightHeight = imageRight.getHeight();
 
@@ -389,24 +243,10 @@ final class BattleScene extends Scene {
 				LOG.warn("Unequal Areas: {0} - {1}", newRightArea, newLeftArea);
 			}
 
-			imageViewLeft.setFitWidth(newLeftWidth);
-			imageViewRight.setFitWidth(newRightWidth);
+			mediaLeft.setFitWidth(newLeftWidth);
+			mediaRight.setFitWidth(newRightWidth);
 
 		}
-	}
-
-	private Button createButton(String text, Runnable action) {
-		Button button = new Button(text);
-		button.setOnAction(event -> action.run());
-		return button;
-	}
-
-	private File getFileLeft() {
-		return fileLeft;
-	}
-
-	private File getFileRight() {
-		return fileRight;
 	}
 
 }

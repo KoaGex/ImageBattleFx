@@ -13,6 +13,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -261,9 +262,9 @@ public class ImageBattleFolder implements Serializable {
 		log.info(pAlgorithmName);
 	}
 
-	public Pair<File, File> getNextToCompare() throws BattleFinishedException {
+	public Optional<Pair<File, File>> getNextToCompare() {
 
-		Pair<File, File> nextToCompare = null;
+		Optional<Pair<File, File>> nextToCompare = Optional.empty();
 
 		// loop until we find two existing images
 		boolean bothExist = false;
@@ -275,31 +276,43 @@ public class ImageBattleFolder implements Serializable {
 			long duration = System.currentTimeMillis() - start;
 			log.trace("time needed to find next pair: {} ms", duration);
 
-			// check for images that have been deleted in the meantime
-			File key = nextToCompare.getKey();
-			File value = nextToCompare.getValue();
+			if (nextToCompare.isPresent()) {
+				Pair<File, File> pair = nextToCompare.get();
 
-			log.trace("nextToCompare: key={}    value={}", key.getName(), value.getName());
+				// check for images that have been deleted in the meantime
+				File key = pair.getKey();
+				File value = pair.getValue();
 
-			bothExist = true;
-			if (!key.exists()) {
-				graph2.removeVertex(key);
-				bothExist = false;
-			}
-			if (!value.exists()) {
-				graph2.removeVertex(value);
-				bothExist = false;
+				log.trace("nextToCompare: key={}    value={}", key.getName(), value.getName());
+
+				bothExist = true;
+				if (!key.exists()) {
+					graph2.removeVertex(key);
+					bothExist = false;
+				}
+				if (!value.exists()) {
+					graph2.removeVertex(value);
+					bothExist = false;
+				}
+			} else {
+				bothExist = true; // break the loop.
 			}
 
 		}
 
 		return nextToCompare;
+
 	}
 
 	void save() {
 		CentralStorage.save(graph2, ignoredFiles);
 	}
 
+	/**
+	 * @param file
+	 *            This file will no longer appear in a battle scene. In ranking scenes it will be marked as ignored and
+	 *            have no place. All ignored files are placed after the worst rated file.
+	 */
 	void ignoreFile(File file) {
 		ignoredFiles.add(file);
 		log.info("added file {}. ", file);
