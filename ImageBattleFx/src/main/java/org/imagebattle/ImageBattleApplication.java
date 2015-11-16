@@ -194,7 +194,8 @@ public class ImageBattleApplication extends Application {
 		// _stage.setFullScreen(true);
 
 		// gather images
-		imageBattleFolder = ImageBattleFolder.readOrCreate(dir, fileRegex, recursive);
+		CentralStorage centralStorage = new CentralStorage(CentralStorage.GRAPH_FILE, CentralStorage.IGNORE_FILE);
+		imageBattleFolder = new ImageBattleFolder(centralStorage, dir, fileRegex, recursive);
 
 		ratingScene = ratingSceneCreator.apply(imageBattleFolder, this::showResultsScene);
 
@@ -259,6 +260,7 @@ public class ImageBattleApplication extends Application {
 
 	private static void showError(Thread t, Throwable e) {
 		System.err.println("***Default exception handler***");
+		log.error("Exception caught by global exception handler:", e);
 		if (Platform.isFxApplicationThread()) {
 			showErrorDialog(e);
 		} else {
@@ -273,6 +275,7 @@ public class ImageBattleApplication extends Application {
 		alert.setContentText(errorMsg.toString());
 		alert.setTitle(e.getMessage());
 		alert.setHeaderText(e.getMessage());
+		alert.setWidth(1000);
 		alert.showAndWait();
 	}
 }
