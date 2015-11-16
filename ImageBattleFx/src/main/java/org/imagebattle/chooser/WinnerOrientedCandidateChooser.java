@@ -9,14 +9,14 @@ import java.util.stream.Stream;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.imagebattle.TransitiveDiGraph2;
+import org.imagebattle.TransitiveDiGraph;
 
 import javafx.util.Pair;
 
 public class WinnerOrientedCandidateChooser extends ACandidateChooser {
 	private static Logger log = LogManager.getLogger();
 
-	public WinnerOrientedCandidateChooser(TransitiveDiGraph2 pGraph) {
+	public WinnerOrientedCandidateChooser(TransitiveDiGraph pGraph) {
 		super(pGraph);
 	}
 

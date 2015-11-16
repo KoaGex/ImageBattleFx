@@ -6,14 +6,14 @@ import java.util.function.Function;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.imagebattle.TransitiveDiGraph2;
+import org.imagebattle.TransitiveDiGraph;
 
 import javafx.util.Pair;
 
 public class MinimumDegreeCandidateChooser extends ACandidateChooser {
 	private static Logger log = LogManager.getLogger();
 
-	public MinimumDegreeCandidateChooser(TransitiveDiGraph2 pGraph) {
+	public MinimumDegreeCandidateChooser(TransitiveDiGraph pGraph) {
 		super(pGraph);
 	}
 

@@ -5,7 +5,7 @@ import java.util.Random;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.imagebattle.TransitiveDiGraph2;
+import org.imagebattle.TransitiveDiGraph;
 
 import javafx.util.Pair;
 
@@ -13,7 +13,7 @@ public class RandomCandidateChooser extends ACandidateChooser {
 
 	private static Logger log = LogManager.getLogger();
 
-	public RandomCandidateChooser(TransitiveDiGraph2 pGraph) {
+	public RandomCandidateChooser(TransitiveDiGraph pGraph) {
 		super(pGraph);
 	}
 

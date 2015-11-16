@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.imagebattle.CentralStorage;
 import org.imagebattle.ImageBattleApplication;
 import org.imagebattle.ImageBattleFolder;
 
@@ -26,10 +27,10 @@ public class CandidateChooserSimulation {
 		File imageBattleDat = new File(funPicsDir, "imageBattle.dat");
 		imageBattleDat.delete();
 
-		String regex = ".*\\.(BMP|GIF|JPEG|JPG|PNG)";
 		boolean recursive = false;
-		ImageBattleFolder folder = ImageBattleFolder.readOrCreate(funPicsDir, ImageBattleApplication.imagePredicate,
-				recursive);
+		CentralStorage centralStorage = new CentralStorage(CentralStorage.GRAPH_FILE, CentralStorage.IGNORE_FILE);
+		ImageBattleFolder folder = new ImageBattleFolder(centralStorage, funPicsDir,
+				ImageBattleApplication.imagePredicate, recursive);
 
 		List<File> files = folder.getResultList().stream().map(entry -> entry.file).collect(Collectors.toList());
 

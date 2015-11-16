@@ -10,7 +10,7 @@ import javafx.util.Pair;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.imagebattle.TransitiveDiGraph2;
+import org.imagebattle.TransitiveDiGraph;
 
 /**
  * This one is more oriented on viewing your pictures in the order they were taken.
@@ -24,7 +24,7 @@ public class ChronologicKoCandidateChooser extends ACandidateChooser {
 
 	private List<File> currentLevel = new LinkedList<>();
 
-	public ChronologicKoCandidateChooser(TransitiveDiGraph2 pGraph) {
+	public ChronologicKoCandidateChooser(TransitiveDiGraph pGraph) {
 		super(pGraph);
 	}
 

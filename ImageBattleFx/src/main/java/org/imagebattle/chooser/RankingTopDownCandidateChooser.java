@@ -5,7 +5,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.imagebattle.TransitiveDiGraph2;
+import org.imagebattle.TransitiveDiGraph;
 
 import javafx.util.Pair;
 
@@ -17,7 +17,7 @@ import javafx.util.Pair;
  */
 public class RankingTopDownCandidateChooser extends ACandidateChooser {
 
-    public RankingTopDownCandidateChooser(TransitiveDiGraph2 pGraph) {
+    public RankingTopDownCandidateChooser(TransitiveDiGraph pGraph) {
 	super(pGraph);
     }
 

@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.imagebattle.TransitiveDiGraph2;
+import org.imagebattle.TransitiveDiGraph;
 
 import javafx.util.Pair;
 
@@ -22,7 +22,7 @@ import javafx.util.Pair;
 public class BiSectionCandidateChooser extends ACandidateChooser {
     private static Logger log = LogManager.getLogger();
 
-    public BiSectionCandidateChooser(TransitiveDiGraph2 pGraph) {
+    public BiSectionCandidateChooser(TransitiveDiGraph pGraph) {
 	super(pGraph);
     }
 

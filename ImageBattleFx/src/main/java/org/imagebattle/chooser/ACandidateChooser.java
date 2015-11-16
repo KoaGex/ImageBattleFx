@@ -9,7 +9,7 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.imagebattle.BattleFinishedException;
-import org.imagebattle.TransitiveDiGraph2;
+import org.imagebattle.TransitiveDiGraph;
 
 import com.drew.imaging.ImageMetadataReader;
 import com.drew.imaging.ImageProcessingException;
@@ -35,7 +35,7 @@ public abstract class ACandidateChooser {
 	/**
 	 * Use this graph. It is never null.
 	 */
-	protected final TransitiveDiGraph2 graph;
+	protected final TransitiveDiGraph graph;
 
 	/**
 	 * Constructor.
@@ -43,7 +43,7 @@ public abstract class ACandidateChooser {
 	 * @param pGraph
 	 *            Subclasses will use this graph to determine the next candidates.
 	 */
-	ACandidateChooser(TransitiveDiGraph2 pGraph) {
+	ACandidateChooser(TransitiveDiGraph pGraph) {
 		graph = Objects.requireNonNull(pGraph);
 	}
 

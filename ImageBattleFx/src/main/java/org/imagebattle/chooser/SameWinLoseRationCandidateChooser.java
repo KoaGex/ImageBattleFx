@@ -11,20 +11,20 @@ import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.imagebattle.TransitiveDiGraph2;
+import org.imagebattle.TransitiveDiGraph;
 
 import javafx.util.Pair;
 
 public class SameWinLoseRationCandidateChooser extends ACandidateChooser {
 	private static Logger log = LogManager.getLogger();
 
-	public SameWinLoseRationCandidateChooser(TransitiveDiGraph2 pGraph) {
+	public SameWinLoseRationCandidateChooser(TransitiveDiGraph pGraph) {
 		super(pGraph);
 	}
 
 	@Override
 	Pair<File, File> doGetNextCandidates() {
-		log.debug("start");
+		log.trace("start");
 
 		Map<Integer, List<File>> differenceMap = graph.vertexSet()//
 				.stream()//

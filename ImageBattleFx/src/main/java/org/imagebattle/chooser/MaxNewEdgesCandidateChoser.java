@@ -6,13 +6,13 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.imagebattle.TransitiveDiGraph2;
+import org.imagebattle.TransitiveDiGraph;
 
 import javafx.util.Pair;
 
 public class MaxNewEdgesCandidateChoser extends ACandidateChooser {
 
-	public MaxNewEdgesCandidateChoser(TransitiveDiGraph2 pGraph) {
+	public MaxNewEdgesCandidateChoser(TransitiveDiGraph pGraph) {
 		super(pGraph);
 	}
 
