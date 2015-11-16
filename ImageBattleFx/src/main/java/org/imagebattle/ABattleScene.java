@@ -131,6 +131,7 @@ abstract class ABattleScene<T extends IMediaView> extends Scene {
 			KeyCode code = keyEvent.getCode();
 			Runnable action = hotKeyMap.get(code);
 			if (action != null) {
+				LOG.info("hotkey used: {}", code);
 				action.run();
 			}
 		});
@@ -142,6 +143,7 @@ abstract class ABattleScene<T extends IMediaView> extends Scene {
 		addHotKey(KeyCode.Y, ignoreAction.apply(this::getFileLeft));
 		addHotKey(KeyCode.M, ignoreAction.apply(this::getFileRight));
 		addHotKey(KeyCode.V, this::ignoreBoth);
+		addHotKey(KeyCode.S, () -> displayNextImages(null, null)); // skip
 
 		// Load the first candidates.
 		displayNextImages(null, null);
@@ -173,9 +175,6 @@ abstract class ABattleScene<T extends IMediaView> extends Scene {
 		if (pWinner != null && pLoser != null) {
 			LOG.info("winner: {}       loser: {}", pWinner.getName(), pLoser.getName());
 			imageBattleFolder.makeDecision(pWinner, pLoser);
-
-			// persist
-			imageBattleFolder.save();
 		}
 
 		double progress = imageBattleFolder.getProgress();
@@ -187,8 +186,10 @@ abstract class ABattleScene<T extends IMediaView> extends Scene {
 			fileLeft = pair.getKey();
 			fileRight = pair.getValue();
 
-			mediaRight.setNewFile(fileLeft);
-			mediaLeft.setNewFile(fileRight);
+			mediaRight.setNewFile(fileRight);
+			mediaLeft.setNewFile(fileLeft);
+
+			doAfterDisplayNext();
 		});
 
 		if (!next.isPresent()) {
@@ -196,6 +197,10 @@ abstract class ABattleScene<T extends IMediaView> extends Scene {
 			switchSceneAction.run();
 		}
 
+	}
+
+	protected void doAfterDisplayNext() {
+		// hook.
 	}
 
 	abstract void doInitializeMediaViews();

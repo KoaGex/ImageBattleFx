@@ -53,6 +53,11 @@ final class BattleScene extends ABattleScene<BattleImageView> {
 		mediaRight = new BattleImageView();
 	}
 
+	@Override
+	protected void doAfterDisplayNext() {
+		adaptImageSizes();
+	}
+
 	private BattleScene(StackPane switchSceneStackPane, ImageBattleFolder folder, Runnable switchSceneAction) {
 		super(switchSceneStackPane, folder, switchSceneAction);
 
@@ -199,53 +204,56 @@ final class BattleScene extends ABattleScene<BattleImageView> {
 		if (windowWidth > 0 && windowHeight > 0) {
 
 			Image imageLeft = mediaLeft.getImage();
-			double leftWidth = imageLeft.getWidth();
-			double leftHeight = imageLeft.getHeight();
-
 			Image imageRight = mediaRight.getImage();
-			double rightWidth = imageRight.getWidth();
-			double rightHeight = imageRight.getHeight();
 
-			// in the end we need a sizing factor for each image
+			if (imageLeft != null && imageRight != null) {
 
-			// no image can be higher than the window
-			// double leftMaxHeightFactor = windowHeight / leftHeight;
-			// double rightMaxHeightFactor = windowHeight / rightHeight;
+				double leftWidth = imageLeft.getWidth();
+				double leftHeight = imageLeft.getHeight();
+				double rightWidth = imageRight.getWidth();
+				double rightHeight = imageRight.getHeight();
 
-			// both images together can't be wider than the window
+				// in the end we need a sizing factor for each image
 
-			// both images should in the end, have the same area
-			double leftArea = leftWidth * leftHeight;
-			double rightArea = rightWidth * rightHeight;
-			double leftRightFactor = leftArea / rightArea;
-			double rightAdaptedWidth = Math.sqrt(leftRightFactor) * rightWidth;
-			double rightAdaptedHeight = Math.sqrt(leftRightFactor) * rightHeight;
+				// no image can be higher than the window
+				// double leftMaxHeightFactor = windowHeight / leftHeight;
+				// double rightMaxHeightFactor = windowHeight / rightHeight;
 
-			double combinedWidth = leftWidth + rightAdaptedWidth;
-			double combinedHeight = Math.max(leftHeight, rightAdaptedHeight);
+				// both images together can't be wider than the window
 
-			double combinedWidthFactor = windowWidth / combinedWidth;
-			double cominedHeightFactor = windowHeight / combinedHeight;
+				// both images should in the end, have the same area
+				double leftArea = leftWidth * leftHeight;
+				double rightArea = rightWidth * rightHeight;
+				double leftRightFactor = leftArea / rightArea;
+				double rightAdaptedWidth = Math.sqrt(leftRightFactor) * rightWidth;
+				double rightAdaptedHeight = Math.sqrt(leftRightFactor) * rightHeight;
 
-			double finalFactor = Math.min(cominedHeightFactor, combinedWidthFactor);
-			double newLeftWidth = leftWidth * finalFactor;
-			double newLeftHeight = leftHeight * finalFactor;
-			double newRightWidth = rightAdaptedWidth * finalFactor;
-			double newRightHeight = rightAdaptedHeight * finalFactor;
+				double combinedWidth = leftWidth + rightAdaptedWidth;
+				double combinedHeight = Math.max(leftHeight, rightAdaptedHeight);
 
-			LOG.trace("widths :  {} - {}", String.valueOf(newLeftWidth), newRightWidth);
-			LOG.trace("heights:  {} - {}", String.valueOf(newLeftHeight), newRightHeight);
+				double combinedWidthFactor = windowWidth / combinedWidth;
+				double cominedHeightFactor = windowHeight / combinedHeight;
 
-			double newLeftArea = newLeftWidth * newLeftHeight;
-			double newRightArea = newRightWidth * newRightHeight;
+				double finalFactor = Math.min(cominedHeightFactor, combinedWidthFactor);
+				double newLeftWidth = leftWidth * finalFactor;
+				double newLeftHeight = leftHeight * finalFactor;
+				double newRightWidth = rightAdaptedWidth * finalFactor;
+				double newRightHeight = rightAdaptedHeight * finalFactor;
 
-			if (Math.abs(newLeftArea - newRightArea) > 5) {
-				LOG.warn("Unequal Areas: {0} - {1}", newRightArea, newLeftArea);
+				LOG.trace("widths :  {} - {}", String.valueOf(newLeftWidth), newRightWidth);
+				LOG.trace("heights:  {} - {}", String.valueOf(newLeftHeight), newRightHeight);
+
+				double newLeftArea = newLeftWidth * newLeftHeight;
+				double newRightArea = newRightWidth * newRightHeight;
+
+				if (Math.abs(newLeftArea - newRightArea) > 5) {
+					LOG.warn("Unequal Areas: {0} - {1}", newRightArea, newLeftArea);
+				}
+
+				mediaLeft.setFitWidth(newLeftWidth);
+				mediaRight.setFitWidth(newRightWidth);
+
 			}
-
-			mediaLeft.setFitWidth(newLeftWidth);
-			mediaRight.setFitWidth(newRightWidth);
-
 		}
 	}
 
