@@ -173,8 +173,9 @@ public class ImageMachineLearning {
 	}
 
 	private static Set<ResultListEntry> loadMostFightCountImages(long maxImageCount) {
-		TransitiveDiGraph2 imageGraph = CentralStorage.readGraph(new File("D:\\"),
-				ImageBattleApplication.imagePredicate, true);
+		CentralStorage centralStorage = new CentralStorage(CentralStorage.GRAPH_FILE, CentralStorage.IGNORE_FILE);
+		TransitiveDiGraph imageGraph = centralStorage.readGraph(new File("D:\\"), ImageBattleApplication.imagePredicate,
+				true);
 
 		Function<? super ResultListEntry, ? extends Integer> entryToFightCount = entry -> entry.wins + entry.loses;
 
