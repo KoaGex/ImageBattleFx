@@ -1,11 +1,15 @@
 package org.imagebattle;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -14,7 +18,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -28,63 +31,23 @@ import org.apache.logging.log4j.Logger;
  *         graph saving format? might be helpful for compression. Or simpler: just zip.
  *
  */
-class CentralStorage {
+public class CentralStorage {
 
-	private static Logger log = LogManager.getLogger();
+	private Logger log = LogManager.getLogger();
 
-	private static final String GRAPH_FILE = "mediaBattleGraph.csv";
-	private static final String IGNORE_FILE = "mediaBattleIgnore.csv";
+	public static final String GRAPH_FILE = "mediaBattleGraph.csv";
+	public static final String IGNORE_FILE = "mediaBattleIgnore.csv";
 
-	static void save(TransitiveDiGraph2 graph, Set<File> ignoredFiles) {
-		/*
-		 * Idea: use observable list or observable set? then only add changes to
-		 * the file.
-		 * 
-		 * Why not? Unecessary optimisation. Think about it again when
-		 * performance issues arise.
-		 */
+	private final File graphFile;
 
-		File graphCsv = getGraphFile();
+	private final File ignoreFile;
 
-		Set<String> oldFileContent = readGraphCsv();
-
-		Stream<String> edgesOfCurrentGraphStream = graph.edgeSet().stream()//
-				.map(edge -> {
-					String edgeSource = graph.getEdgeSource(edge).getAbsolutePath();
-					String edgeTarget = graph.getEdgeTarget(edge).getAbsolutePath();
-					return edgeSource + ";" + edgeTarget;
-				});
-
-		String graphCsvContent = Stream.concat(oldFileContent.stream(), edgesOfCurrentGraphStream)//
-				.distinct()//
-				.sorted()//
-				.collect(Collectors.joining("\n"));
-
-		log.debug("file lines before save: {}    current edge count: {} ", oldFileContent.size(),
-				graph.edgeSet().size());
-
-		writeStringIntoFile(graphCsvContent, graphCsv);
-
-		saveIgnoreFile(ignoredFiles);
+	public CentralStorage(String graphFileName, String ignoreFileName) {
+		graphFile = getFile(graphFileName);
+		ignoreFile = getFile(ignoreFileName);
 	}
 
-	/**
-	 * @param newContent
-	 *            Replaces the old content of the file.
-	 * @param targetFile
-	 *            File will be created if necessary.
-	 */
-	private static void writeStringIntoFile(String newContent, File targetFile) {
-		// Try-with automatically closes it which should also trigger flush().
-		try (FileWriter fileWriter = new FileWriter(targetFile)) {
-			fileWriter.write(newContent);
-		} catch (IOException e) {
-			throw new UncheckedIOException(e);
-		}
-	}
-
-	static TransitiveDiGraph2 readGraph(File chosenDirectory, Predicate<? super File> matchesFileRegex,
-			Boolean recursive) {
+	TransitiveDiGraph readGraph(File chosenDirectory, Predicate<? super File> matchesFileRegex, Boolean recursive) {
 
 		Predicate<File> containedRecursively = file -> {
 			return file.getAbsolutePath().startsWith(chosenDirectory.getAbsolutePath());
@@ -98,7 +61,7 @@ class CentralStorage {
 		Predicate<File> acceptFile = matchesChosenDirectory.and(matchesFileRegex);
 
 		Set<String> oldFileContent = readGraphCsv();
-		TransitiveDiGraph2 graph = new TransitiveDiGraph2();
+		TransitiveDiGraph graph = new TransitiveDiGraph();
 		oldFileContent.forEach(line -> {
 			String[] split = line.split(";");
 			String fromString = split[0];
@@ -121,29 +84,55 @@ class CentralStorage {
 	}
 
 	/**
-	 * TODO To remove files from the ignore list a new method will be added.
-	 * 
-	 * @param ignoredFiles
-	 *            Each of the given files should be ignored in all coming media battles.
+	 * @return The whole graph with all saved edges. It does not save files without edges.
 	 */
-	private static void saveIgnoreFile(Set<File> ignoredFiles) {
-		File ignoreFile = getIgnoreFile();
-		Set<String> oldIgnoredFiles = readFile(ignoreFile);
+	TransitiveDiGraph readGraph() {
+		TransitiveDiGraph graph = new TransitiveDiGraph();
 
-		Stream<String> currentIgnoredAbsolutePathsStream = ignoredFiles.stream().map(File::getAbsolutePath);
+		Set<String> oldFileContent = readGraphCsv();
+		oldFileContent.forEach(line -> {
+			String[] split = line.split(";");
+			String fromString = split[0];
+			String toString = split[1];
+			File from = new File(fromString);
+			File to = new File(toString);
 
-		String newIgnoredFiles = Stream.concat(oldIgnoredFiles.stream(), currentIgnoredAbsolutePathsStream)//
-				.distinct()//
-				.sorted()//
-				.collect(Collectors.joining("\n"));
+			// Adding vertexes will not create duplicates.
+			graph.addVertex(from);
+			graph.addVertex(to);
 
-		log.trace(newIgnoredFiles);
-		writeStringIntoFile(newIgnoredFiles, ignoreFile);
+			graph.addEdge(from, to);
+		});
 
+		return graph;
 	}
 
-	static Set<File> readIgnoreFile(File chosenDirectory, Predicate<File> fileRegex, Boolean recursive) {
-		File ignoreFile = getIgnoreFile();
+	void addEdges(TransitiveDiGraph graph) {
+
+		/*
+		 * Idea: use observable list or observable set? then only add changes to
+		 * the file.
+		 * 
+		 * Why not? Unecessary optimisation. Think about it again when
+		 * performance issues arise.
+		 */
+
+		Set<String> oldFileContent = readGraphCsv();
+
+		Stream<String> edgesOfCurrentGraphStream = edgeLines(graph);
+
+		String graphCsvContent = Stream.concat(oldFileContent.stream(), edgesOfCurrentGraphStream)//
+				.distinct()//
+				.sorted()//
+				.collect(Collectors.joining(System.lineSeparator()));
+
+		log.debug("file lines before save: {}    current edge count: {} ", oldFileContent.size(),
+				graph.edgeSet().size());
+
+		writeStringIntoFile(graphCsvContent, graphFile);
+	}
+
+	Set<File> readIgnoreFile(File chosenDirectory, Predicate<File> fileRegex, Boolean recursive) {
 		Set<String> readFile = readFile(ignoreFile);
 
 		Predicate<File> containedRecursively = file -> {
@@ -157,68 +146,138 @@ class CentralStorage {
 		Predicate<File> matchesChosenDirectory = recursive ? containedRecursively : containedDirectly;
 
 		Predicate<File> acceptFile = matchesChosenDirectory.and(fileRegex);
-		return readFile.stream()//
+		Set<File> result = readFile.stream()//
 				.map(File::new)//
 				.filter(acceptFile)//
 				.collect(Collectors.toSet());
+		log.debug("count of ignored files: {}", result.size());
+		return result;
 	}
 
-	static Set<File> readIgnoreFile() {
-		File file = getIgnoreFile();
-		Set<String> readFile = readFile(file);
+	Set<File> readIgnoreFile() {
+		Set<String> readFile = readFile(ignoreFile);
 		return readFile.stream().map(File::new).collect(Collectors.toSet());
 	}
 
-	private static File getIgnoreFile() {
-		String child = IGNORE_FILE;
-		File file = getFile(child);
-		return file;
+	/**
+	 * @param fileToIgnore
+	 *            Delete all edges and add it to the ignore list.
+	 */
+	void removeFromEdges(File fileToIgnore) {
+		TransitiveDiGraph graph = readGraph();
+		int edgesBefore = graph.edgeSet().size();
+		graph.removeVertex(fileToIgnore);
+		int edgesAfter = graph.edgeSet().size();
+
+		log.debug("removed {} and with it {} edges", fileToIgnore, edgesBefore - edgesAfter);
+
+		Stream<String> edgeLines = edgeLines(graph);
+
+		String graphCsvContent = edgeLines.sorted()// sorted to easily spot changes with diff
+				// no distinct needed because nothing was added.
+				.collect(Collectors.joining(System.lineSeparator()));
+
+		writeStringIntoFile(graphCsvContent, graphFile);
 	}
 
-	private static File getFile(String fileName) {
+	/**
+	 * @param newContent
+	 *            Replaces the old content of the file.
+	 * @param targetFile
+	 *            File will be created if necessary.
+	 */
+	private void writeStringIntoFile(String newContent, File targetFile) {
+		// Try-with automatically closes it which should also trigger flush().
+		try (FileWriter fileWriter = new FileWriter(targetFile)) {
+			fileWriter.write(newContent);
+		} catch (IOException e) {
+			throw new UncheckedIOException(e);
+		}
+	}
+
+	/**
+	 * TODO To remove files from the ignore list a new method will be added.
+	 * 
+	 * @param ignoredFiles
+	 *            Each of the given files should be ignored in all coming media battles.
+	 */
+	void addToIgnored(File ignoredFile) {
+		Set<String> ignoredFiles = readFile(ignoreFile);
+
+		ignoredFiles.add(ignoredFile.getAbsolutePath());
+
+		String newIgnoredFiles = ignoredFiles.stream()//
+				.sorted()//
+				.collect(Collectors.joining(System.lineSeparator()));
+
+		log.trace(newIgnoredFiles);
+		writeStringIntoFile(newIgnoredFiles, ignoreFile);
+
+	}
+
+	void removeFromIgnored(File file) {
+		Set<String> oldIgnoredFiles = readFile(ignoreFile); // does set mess with the ordering?
+
+		boolean wasRemoved = oldIgnoredFiles.remove(file.getAbsolutePath());
+
+		String newIgnoredFiles = oldIgnoredFiles.stream()//
+				.distinct()//
+				.sorted()//
+				.collect(Collectors.joining(System.lineSeparator()));
+
+		log.debug("file {} was removed: {}", file, wasRemoved);
+		writeStringIntoFile(newIgnoredFiles, ignoreFile);
+	}
+
+	private File getFile(String fileName) {
 		String userHome = System.getProperty("user.home");
 		File userHomeDirectory = new File(userHome);
 		File file = new File(userHomeDirectory, fileName);
 		return file;
 	}
 
-	private static File getGraphFile() {
-		String child = GRAPH_FILE;
-		return getFile(child);
+	private Set<String> readGraphCsv() {
+		return readFile(graphFile);
 	}
 
-	private static Set<String> readGraphCsv() {
-		File graphCsv = getGraphFile();
-		return readFile(graphCsv);
-	}
-
-	private static Set<String> readFile(File file) {
-		Set<String> oldFileContent = new HashSet<>();
-
+	private Set<String> readFile(File file) {
+		log.debug(file);
+		Path path = Paths.get(file.getAbsolutePath());
+		List<String> readAllLines = null;
 		try {
-			if (!file.exists()) {
-				boolean createSucces = file.createNewFile();
-				log.info("Needed to create file {} and it succeeded: {}", file, createSucces);
-			}
-
-			try (BufferedReader bufferedReader = new BufferedReader(new FileReader(file))) {
-
-				boolean keepReading = true;
-				while (keepReading) {
-					String readLine = bufferedReader.readLine();
-					if (readLine == null) {
-						keepReading = false;
-					} else {
-						oldFileContent.add(readLine);
-					}
-				}
-			}
-
-		} catch (IOException e1) {
-			log.catching(Level.WARN, e1);
-			throw new UncheckedIOException(e1);
+			// charset to support german umlauts
+			readAllLines = Files.readAllLines(path, StandardCharsets.ISO_8859_1);
+		} catch (NoSuchFileException e) {
+			log.debug("file {} does not exist", file);
+		} catch (IOException e) {
+			throw new UncheckedIOException(e);
 		}
-		return oldFileContent;
+		readAllLines = readAllLines == null ? new ArrayList<>() : readAllLines;
+		return new HashSet<>(readAllLines);
 	}
 
+	private Stream<String> edgeLines(TransitiveDiGraph graph) {
+		Stream<String> edgesOfCurrentGraphStream = graph.edgeSet().stream()//
+				.map(edge -> {
+					String edgeSource = graph.getEdgeSource(edge).getAbsolutePath();
+					String edgeTarget = graph.getEdgeTarget(edge).getAbsolutePath();
+					return edgeSource + ";" + edgeTarget;
+				});
+		return edgesOfCurrentGraphStream;
+	}
+
+	List<File> getInconsistencies() {
+		TransitiveDiGraph graph = readGraph();
+		Set<File> vertexSet = graph.vertexSet();
+		Set<File> ignoredFiles = readIgnoreFile();
+
+		List<File> inconsistencies = ignoredFiles.stream()//
+				.filter(vertexSet::contains)//
+				.sorted()//
+				.collect(Collectors.toList());
+
+		log.debug("count: {}   content: {}", inconsistencies.size(), inconsistencies);
+
+		return inconsistencies;
+	}
 }
