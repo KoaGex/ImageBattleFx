@@ -18,7 +18,7 @@ import org.jgrapht.graph.SimpleDirectedGraph;
 
 import javafx.util.Pair;
 
-public class TransitiveDiGraph2 extends SimpleDirectedGraph<File, DefaultEdge> {
+public class TransitiveDiGraph extends SimpleDirectedGraph<File, DefaultEdge> {
 	private static Logger LOG = LogManager.getLogger();
 
 	/**
@@ -26,12 +26,12 @@ public class TransitiveDiGraph2 extends SimpleDirectedGraph<File, DefaultEdge> {
 	 * 
 	 * @param pNodes
 	 */
-	TransitiveDiGraph2(List<File> pNodes) {
+	TransitiveDiGraph(List<File> pNodes) {
 		super(DefaultEdge.class);
 		pNodes.forEach(this::addVertex);
 	}
 
-	public TransitiveDiGraph2() {
+	public TransitiveDiGraph() {
 		super(DefaultEdge.class);
 	}
 
