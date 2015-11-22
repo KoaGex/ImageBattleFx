@@ -31,53 +31,6 @@ import javafx.stage.Stage;
 
 public class ImageBattleApplication extends Application {
 
-	// Issue list
-
-	// TODO create hash values of image content to uniquely identify them after
-	// moving.
-	// TODO use deeplearning4j
-	// TODO history for the last selected folders
-	// TODO export the result list (txt, csv, html)
-	// TODO battleScene: rotate images ( tried mediautil-1.0 but image size decreased)
-	// TODO Hotkey overview
-	// TODO do imageBattle on result of online image search
-	// TODO menu->view: make all detail information like place,resolution,
-	// filename optional
-	// TODO use TreeSets to speed up choosers with sorting
-	// TODO generic trying of the winner oriented chooser to optimize the
-	// coefficients?
-	// TODO in battle scene show the current ranking place ?
-	// TODO ranking diashow
-	// TODO ranking: click image to fullscreen/diashow , then navigate with
-	// arrow keys
-	// TODO ranking scene: button to un-ignore images
-	// TODO threaded: getNextCandidates before user makes decision, load them
-	// and then check if still valid
-	// TODO cache images to improve speed ( mostly when opening the ranking
-	// scene )
-	// TODO Buttons with ICON for switching scenes
-	// TODO error handling: directory/images were moved
-	// TODO can the process be speed up even more for many images ( >200 ) ?
-	// TODO context menu: delete on file system
-	// TODO Diagrams of wins and loses to display total progress
-	// TODO compare videos
-	// TODO all actions as icon buttons
-	// TODO move decision count into one new dialog together with edge count,
-	// and other information about how far the battle has come.
-	// TODO remember dimensions for each scene
-	// TODO right-click -> rename in results scene
-	// TODO when rating scene is slim ( heigth > 2* width ) display images below
-	// each other
-	// TODO F11 hotkey for fullscreen ( keep that mode when switching )
-	// TODO when rating is finished only show ranking without switch button
-	// TODO JUnit
-	// TODO rewrite using spark for a more centralized way => how to handle
-	// multiple users rating the same images? each has own graph but candidate
-	// choosing looks at others graphs
-	// TODO favorite images (star/heart) for photo album? how to display in results?
-	// TODO take command line args to directly start image/music and provide a directory.
-	// TODO build: package with jre, maybe javapackager?
-	// TODO Use D3.js and WebView to display the current graph (to help users understand the concept and to debug )
 	private static final Predicate<File> musicPredicate = createFileRegexChecker(".*\\.(MP3|OGG)");
 
 	public static final Predicate<File> imagePredicate = createFileRegexChecker(".*\\.(BMP|GIF|JPEG|JPG|PNG)");
