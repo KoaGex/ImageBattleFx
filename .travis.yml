@@ -1,4 +1,0 @@
-language: java
-install: chmod u+x ImageBattleFx/gradlew
-script: ImageBattleFx/gradlew test distZip
-
