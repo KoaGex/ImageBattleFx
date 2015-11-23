@@ -3,6 +3,7 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/encog-java-core"/>
 	<classpathentry kind="src" path="src/main/java"/>
 	<classpathentry kind="src" path="src/main/resources"/>
+	<classpathentry kind="src" path="src/test/java"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/jdk1.8.0_45"/>
 	<classpathentry kind="lib" path="lib/log4j-api-2.3.jar">
 		<attributes>
@@ -25,13 +26,6 @@
 	<classpathentry kind="lib" path="lib/metadata-extractor-2.8.1.jar"/>
 	<classpathentry kind="lib" path="lib/xmpcore-5.1.2.jar"/>
 	<classpathentry kind="lib" path="lib/jgrapht-core-0.9.1.jar" sourcepath="lib/jgrapht-core-0.9.1-sources.jar"/>
-	<classpathentry kind="lib" path="runtime/functionaljava-4.4.jar" sourcepath="runtime/functionaljava-4.4-sources.jar">
-		<attributes>
-			<attribute name="javadoc_location" value="http://www.functionaljava.org/javadoc/4.4/functionaljava/index.html"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="runtime/functionaljava-java8-4.4.jar" sourcepath="runtime/functionaljava-java8-4.4-sources.jar"/>
-	<classpathentry kind="lib" path="runtime/functionaljava-quickcheck-4.4.jar" sourcepath="runtime/functionaljava-quickcheck-4.4-sources.jar"/>
 	<classpathentry kind="lib" path="lib/jl1.0.1.jar"/>
 	<classpathentry kind="lib" path="jmf/customizer.jar"/>
 	<classpathentry kind="lib" path="jmf/jmf.jar"/>
