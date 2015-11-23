@@ -1,5 +1,6 @@
 apply plugin: 'java'
 apply plugin: 'application'
+apply plugin: 'eclipse'
 
  repositories { mavenCentral() }
  
@@ -18,9 +19,17 @@ dependencies {
   
   // read mp3 tags
   compile files("lib/jid3lib-0.5.4.jar")
+  compile files("lib/tritonus_share.jar")
 
   // encog for neural networks
   compile 'org.encog:encog-core:3.3.0'
+  
+  // testing
+    testCompile "junit:junit:4.10"
+    testCompile "org.testfx:testfx-core:4.0.+"
+    testCompile "org.testfx:testfx-legacy:4.0.+", {
+        exclude group: "junit", module: "junit"
+    }
 }
 
 
