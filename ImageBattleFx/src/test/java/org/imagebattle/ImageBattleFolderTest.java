@@ -163,4 +163,5 @@ public class ImageBattleFolderTest {
 		assertThat(readGraph.vertexSet(), IsNot.not(hasItem(fileInconsistend)));
 
 	}
+
 }

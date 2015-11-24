@@ -4,9 +4,11 @@ import java.io.File;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
@@ -75,7 +77,7 @@ public class SameWinLoseRationCandidateChooser extends ACandidateChooser {
 						return getRandomElement(list);
 					})//
 					.findAny()//
-					.get();//
+					.orElseGet(this::getMinimalDistancePair);//
 		}
 
 		// TODO what when the biggest has only images that are already compared
@@ -84,6 +86,22 @@ public class SameWinLoseRationCandidateChooser extends ACandidateChooser {
 		log.debug("end, result:{}", result);
 
 		return result;
+	}
+
+	private Pair<File, File> getMinimalDistancePair() {
+
+		Function<Pair<File, File>, Integer> pairDifference = pair -> Math
+				.abs(graph.getWinLoseDifference(pair.getKey()) - graph.getWinLoseDifference(pair.getValue()));
+
+		return graph.getCandidateStream()//
+				.collect(Collectors.groupingBy(pairDifference)) //
+				.entrySet()//
+				.stream()//
+				.min(Comparator.comparing(Entry::getKey))//
+				.map(Entry::getValue)//
+				.map(this::getRandomElement)//
+				.get();
+
 	}
 
 	private <T> T getRandomElement(List<T> list) {
