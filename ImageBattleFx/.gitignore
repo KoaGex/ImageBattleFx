@@ -4,3 +4,5 @@
 /.pmd
 /.gradle/
 /jmf/
+/.classpath
+/.project
