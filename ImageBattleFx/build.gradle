@@ -4,7 +4,7 @@ apply plugin: 'eclipse'
 
  repositories { mavenCentral() }
  
- version = '0.0.3'
+ version = '0.0.4'
  mainClassName = 'org.imagebattle.ImageBattleApplication'
 
 dependencies {
