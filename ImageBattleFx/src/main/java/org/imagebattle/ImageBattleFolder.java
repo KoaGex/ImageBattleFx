@@ -27,6 +27,7 @@ import org.imagebattle.chooser.RankingTopDownCandidateChooser;
 import org.imagebattle.chooser.SameWinLoseRationCandidateChooser;
 import org.imagebattle.chooser.WinnerOrientedCandidateChooser;
 
+import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.util.Pair;
 
 /**
@@ -49,8 +50,6 @@ public class ImageBattleFolder {
 	 */
 	private final Map<String, ACandidateChooser> choosingAlgorithms = new HashMap<>();
 	private ACandidateChooser choosingAlgorithm;
-
-	private boolean finished = false;
 
 	private final CentralStorage centralStorage;
 
@@ -284,12 +283,12 @@ public class ImageBattleFolder {
 		centralStorage.removeFromIgnored(fileToReset);
 	}
 
-	boolean isFinished() {
-		return finished;
+	private void checkFinished() {
+
 	}
 
-	void setFinished(boolean finished) {
-		this.finished = finished;
+	ReadOnlyBooleanProperty finishedProperty() {
+		return graph.finishedProperty();
 	}
 
 }

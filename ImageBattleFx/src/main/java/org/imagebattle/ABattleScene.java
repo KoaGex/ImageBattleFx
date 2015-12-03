@@ -193,7 +193,6 @@ abstract class ABattleScene<T extends IMediaView> extends Scene {
 		});
 
 		if (!next.isPresent()) {
-			imageBattleFolder.setFinished(true);
 			switchSceneAction.run();
 		}
 

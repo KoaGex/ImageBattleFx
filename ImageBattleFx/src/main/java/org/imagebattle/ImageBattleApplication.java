@@ -95,7 +95,7 @@ public class ImageBattleApplication extends Application {
 		});
 		imagesButton.setOnAction(event -> {
 			log.info("battle type: images");
-			showDirectoryChooser(imagePredicate, BattleScene::createBattleScene, RankingScene::createRankingScene);
+			showDirectoryChooser(imagePredicate, ImageBattleScene::createBattleScene, RankingScene::createRankingScene);
 		});
 
 		Scene battleKindChooserScene = new Scene(gridPane);

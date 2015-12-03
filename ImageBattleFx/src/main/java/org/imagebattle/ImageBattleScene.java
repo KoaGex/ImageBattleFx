@@ -38,13 +38,13 @@ import javafx.scene.layout.StackPane;
  * @author KoaGex
  *
  */
-final class BattleScene extends ABattleScene<BattleImageView> {
+final class ImageBattleScene extends ABattleScene<BattleImageView> {
 
 	private static final Logger LOG = LogManager.getLogger();
 
-	static BattleScene createBattleScene(ImageBattleFolder folder, Runnable switchSceneAction) {
+	static ImageBattleScene createBattleScene(ImageBattleFolder folder, Runnable switchSceneAction) {
 		StackPane switchSceneStackPane = new StackPane();
-		return new BattleScene(switchSceneStackPane, folder, switchSceneAction);
+		return new ImageBattleScene(switchSceneStackPane, folder, switchSceneAction);
 	}
 
 	@Override
@@ -58,7 +58,7 @@ final class BattleScene extends ABattleScene<BattleImageView> {
 		adaptImageSizes();
 	}
 
-	private BattleScene(StackPane switchSceneStackPane, ImageBattleFolder folder, Runnable switchSceneAction) {
+	private ImageBattleScene(StackPane switchSceneStackPane, ImageBattleFolder folder, Runnable switchSceneAction) {
 		super(switchSceneStackPane, folder, switchSceneAction);
 
 		Label resolutionLabelLeft = mediaLeft.getResolutionLabel();

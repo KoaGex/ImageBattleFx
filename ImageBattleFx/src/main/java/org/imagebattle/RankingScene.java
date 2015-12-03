@@ -43,6 +43,7 @@ import javafx.stage.DirectoryChooser;
  *
  */
 class RankingScene extends Scene {
+	// TODO rename to ImageResultsScene
 	private static Logger log = LogManager.getLogger();
 
 	private ObservableList<Node> resultsVboxChildren;
@@ -54,7 +55,12 @@ class RankingScene extends Scene {
 		imageBattleFolder = folder;
 
 		Button switchSceneButton = new Button("Vergleiche");
+		switchSceneButton.getStyleClass().add("switch-scene-button");
 		switchSceneButton.setOnAction(event -> switchSceneAction.run());
+
+		// Battle finished => disable button
+		switchSceneButton.disableProperty().bind(imageBattleFolder.finishedProperty());
+
 		StackPane.setAlignment(switchSceneButton, Pos.TOP_RIGHT);
 		StackPane.setMargin(switchSceneButton, new Insets(15, 15, 0, 0));
 

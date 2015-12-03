@@ -4,7 +4,6 @@ import java.io.File;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
@@ -16,20 +15,21 @@ import org.apache.logging.log4j.Logger;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.SimpleDirectedGraph;
 
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.ReadOnlyBooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.util.Pair;
 
+/**
+ * 
+ * A graph that represents a transitive relation.
+ * 
+ * @author KoaGex
+ *
+ */
 public class TransitiveDiGraph extends SimpleDirectedGraph<File, DefaultEdge> {
 	private static Logger LOG = LogManager.getLogger();
-
-	/**
-	 * Constructor
-	 * 
-	 * @param pNodes
-	 */
-	TransitiveDiGraph(List<File> pNodes) {
-		super(DefaultEdge.class);
-		pNodes.forEach(this::addVertex);
-	}
+	private BooleanProperty finished = new SimpleBooleanProperty();
 
 	public TransitiveDiGraph() {
 		super(DefaultEdge.class);
@@ -101,6 +101,8 @@ public class TransitiveDiGraph extends SimpleDirectedGraph<File, DefaultEdge> {
 		double percent = Double.valueOf(edgeCountNew) / Double.valueOf(ofMaximal);
 		LOG.trace("added {} and now have {} edges of {} possible. In Percent: {}", edgesAdded, edgeCountNew, ofMaximal,
 				percent);
+
+		checkFinished();
 
 		return result;
 	}
@@ -183,5 +185,29 @@ public class TransitiveDiGraph extends SimpleDirectedGraph<File, DefaultEdge> {
 
 		LOG.trace(calculatedCandidateCount);
 		return calculatedCandidateCount;
+	}
+
+	@Override
+	public boolean addVertex(File v) {
+		boolean wasAdded = super.addVertex(v);
+		checkFinished();
+		return wasAdded;
+	}
+
+	public boolean removeVertex(File v) {
+		boolean wasRemoved = super.removeVertex(v);
+		checkFinished();
+		return wasRemoved;
+	};
+
+	ReadOnlyBooleanProperty finishedProperty() {
+		return finished;
+	}
+
+	private void checkFinished() {
+		int currentEdgeCount = getCurrentEdgeCount();
+		int maxEdgeCount = getMaxEdgeCount();
+		boolean graphCompleted = currentEdgeCount == maxEdgeCount;
+		finished.set(graphCompleted);
 	}
 }
