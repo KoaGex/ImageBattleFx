@@ -47,7 +47,6 @@ import org.encog.neural.networks.layers.BasicLayer;
 import org.encog.neural.networks.training.propagation.manhattan.ManhattanPropagation;
 import org.encog.neural.networks.training.propagation.quick.QuickPropagation;
 import org.encog.neural.networks.training.propagation.scg.ScaledConjugateGradient;
-import org.encog.neural.networks.training.propagation.sgd.StochasticGradientDescent;
 import org.encog.persist.EncogDirectoryPersistence;
 import org.encog.platformspecific.j2se.data.image.ImageMLData;
 import org.encog.platformspecific.j2se.data.image.ImageMLDataSet;
@@ -297,7 +296,7 @@ public class ImageMachineLearning {
 		ManhattanPropagation manh;
 		QuickPropagation qui = new QuickPropagation(network, trainingData, 2.0);
 		ScaledConjugateGradient scg;
-		StochasticGradientDescent sgd;
+		// StochasticGradientDescent sgd;
 
 		printMemoryStats();
 
