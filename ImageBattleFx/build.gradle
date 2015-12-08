@@ -8,7 +8,6 @@ apply plugin: 'eclipse'
  mainClassName = 'org.imagebattle.ImageBattleApplication'
 
 dependencies {
-  compile files("${System.getProperty('java.home')}/lib/tools.jar")
   compile group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.3'
   compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.3'
   // compile group: 'com.sparkjava', name: 'spark-core', version: '2.2'
