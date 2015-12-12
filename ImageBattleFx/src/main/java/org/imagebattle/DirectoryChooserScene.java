@@ -4,8 +4,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.UncheckedIOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -83,8 +81,7 @@ final class DirectoryChooserScene extends Scene {
 		SplitPane splitPane = new SplitPane(treeView, scrollPane);
 
 		/*
-		 * If 10 percent are less than 250 pixels the divider will be set to 250
-		 * pixels from the left.
+		 * If 10 percent are less than 250 pixels the divider will be set to 250 pixels from the left.
 		 */
 		treeView.setMinWidth(250);
 		splitPane.setDividerPositions(0.10);
@@ -176,44 +173,48 @@ final class DirectoryChooserScene extends Scene {
 
 	private TreeItem<DirectoryChooserFile> buildDirectoryTree(Predicate<File> fileRegex) {
 
-		TreeItem<DirectoryChooserFile> rootItem = new TreeItem<>(new DirectoryChooserFile("D:\\", fileRegex));
-		Path start = Paths.get("D:\\");
-		Runnable walk = () -> {
+		// TreeItem<DirectoryChooserFile> rootItem = new TreeItem<>(new DirectoryChooserFile("D:\\", fileRegex));
+		TreeItem<DirectoryChooserFile> rootItem = new TreeItem<>(null);
+		File[] listRoots = File.listRoots();// TODO one thread for every root?
+		keepSearching.set(true);
+		for (File root : listRoots) {
+			Runnable walk = () -> {
 
-			keepSearching.set(true);
+				// Use breadth first search to quickly create the tree items of 1-3 levels below root.
 
-			// Use breadth first search to quickly create the tree items of 1-3 levels below root.
-			File file = start.toFile();
-			List<File> queue = new ArrayList<>();
-			queue.add(file);
+				List<File> queue = new ArrayList<>();
+				queue.add(root);
+				LOG.debug(root);
 
-			while (keepSearching.get() && !queue.isEmpty()) {
-				File currentFile = queue.remove(0);
-				LOG.trace("current File: {}", currentFile);
+				while (keepSearching.get() && !queue.isEmpty()) {
+					File currentFile = queue.remove(0);
+					LOG.trace("current File: {}", currentFile);
 
-				if (currentFile.isDirectory()) {
-					File[] listFiles = currentFile.listFiles();
-					if (listFiles != null) {
-						List<File> asList = Arrays.asList(listFiles);
-						queue.addAll(asList);
+					if (currentFile.isDirectory()) {
+						File[] listFiles = currentFile.listFiles();
+						if (listFiles != null) {
+							List<File> asList = Arrays.asList(listFiles);
+							queue.addAll(asList);
+						}
+					} else if (fileRegex.test(currentFile)) {
+						Platform.runLater(() -> {
+							LOG.trace("success: {}", currentFile);
+							createTreeItem(rootItem, currentFile, fileRegex);
+						});
+					} else {
+						LOG.trace("ignore: {}", currentFile);
 					}
-				} else if (fileRegex.test(currentFile)) {
-					Platform.runLater(() -> {
-						LOG.trace("success: {}", currentFile);
-						createTreeItem(rootItem, currentFile, fileRegex);
-					});
-				} else {
-					LOG.trace("ignore: {}", currentFile);
 				}
-			}
-			LOG.trace("queue size: {}", queue.size());
-			LOG.debug("finished");
+				LOG.trace("queue size: {}", queue.size());
+				LOG.debug("finished");
 
-			LOG.debug("tree building finished");
-		};
+				LOG.debug("tree building finished");
+			};
 
-		Thread thread = new Thread(walk);
-		thread.start();
+			// One thread for every root because it is very likely to be a separate device.
+			Thread thread = new Thread(walk);
+			thread.start();
+		}
 
 		return rootItem;
 	}
