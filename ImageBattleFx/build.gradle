@@ -23,6 +23,8 @@ dependencies {
   // encog for neural networks
   compile 'org.encog:encog-core:3.3.0'
   
+  compile 'org.xerial:sqlite-jdbc:3.8.11.2'
+  
   // testing
     testCompile "junit:junit:4.10"
     testCompile "org.testfx:testfx-core:4.0.+"
