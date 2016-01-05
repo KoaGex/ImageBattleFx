@@ -10,6 +10,6 @@ import java.io.File;
  */
 public interface IMediaView {
 
-	void setNewFile(File file);
+  void setNewFile(File file);
 
 }

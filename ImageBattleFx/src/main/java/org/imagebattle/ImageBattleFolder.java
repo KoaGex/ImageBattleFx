@@ -31,264 +31,266 @@ import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.util.Pair;
 
 /**
- * Represents one folder the user has chosen. Files that are direct or indirect children of this directory take part in
- * the battle.
+ * Represents one folder the user has chosen. Files that are direct or indirect children of this
+ * directory take part in the battle.
  * 
  * @author Besitzer
  *
  */
 public class ImageBattleFolder {
 
-	private static Logger log = LogManager.getLogger();
+  private static Logger log = LogManager.getLogger();
 
-	private final TransitiveDiGraph graph;
+  private final TransitiveDiGraph graph;
 
-	private final Set<File> ignoredFiles = new HashSet<>();
+  private final Set<File> ignoredFiles = new HashSet<>();
 
-	/**
-	 * Multiple strategies to select the next images to be compared.
-	 */
-	private final Map<String, ACandidateChooser> choosingAlgorithms = new HashMap<>();
-	private ACandidateChooser choosingAlgorithm;
+  /**
+   * Multiple strategies to select the next images to be compared.
+   */
+  private final Map<String, ACandidateChooser> choosingAlgorithms = new HashMap<>();
+  private ACandidateChooser choosingAlgorithm;
 
-	private final CentralStorage centralStorage;
+  private final CentralStorage centralStorage;
 
-	/**
-	 * @param centralStorage
-	 *            TODO
-	 * @param chosenDirectory
-	 * @param fileRegex
-	 * @param recursive
-	 */
-	public ImageBattleFolder(CentralStorage centralStorage, File chosenDirectory, Predicate<File> fileRegex,
-			Boolean recursive) {
-		this.centralStorage = centralStorage;
+  /**
+   * @param centralStorage
+   *          TODO
+   * @param chosenDirectory
+   * @param fileRegex
+   * @param recursive
+   */
+  public ImageBattleFolder(CentralStorage centralStorage, File chosenDirectory,
+      Predicate<File> fileRegex, Boolean recursive) {
+    this.centralStorage = centralStorage;
 
-		graph = new TransitiveDiGraph();
+    graph = new TransitiveDiGraph();
 
-		log.info("chosenDirectory: {}", chosenDirectory);
+    log.info("chosenDirectory: {}", chosenDirectory);
 
-		// Merge in vertexes and edges from CentralStorage.
-		TransitiveDiGraph readGraph = centralStorage.readGraph(chosenDirectory, fileRegex, recursive);
-		readGraph.vertexSet().forEach(graph::addVertex);
-		readGraph.edgeSet().forEach(edge -> {
-			File edgeSource = readGraph.getEdgeSource(edge);
-			File edgeTarget = readGraph.getEdgeTarget(edge);
-			graph.addEdge(edgeSource, edgeTarget);
-		});
+    // Merge in vertexes and edges from CentralStorage.
+    TransitiveDiGraph readGraph = centralStorage.readGraph(chosenDirectory, fileRegex, recursive);
+    readGraph.vertexSet().forEach(graph::addVertex);
+    readGraph.edgeSet().forEach(edge -> {
+      File edgeSource = readGraph.getEdgeSource(edge);
+      File edgeTarget = readGraph.getEdgeTarget(edge);
+      graph.addEdge(edgeSource, edgeTarget);
+    });
 
-		// Merge in ignored files from CentralStorage.
-		Set<File> readIgnoreFile = centralStorage.readIgnoreFile(chosenDirectory, fileRegex, recursive);
-		ignoredFiles.addAll(readIgnoreFile);
+    // Merge in ignored files from CentralStorage.
+    Set<File> readIgnoreFile = centralStorage.readIgnoreFile(chosenDirectory, fileRegex, recursive);
+    ignoredFiles.addAll(readIgnoreFile);
 
-		// search for new images and add them
-		// TODO handle directory without images chosen
-		LinkedList<File> currentLevel = new LinkedList<>();
+    // search for new images and add them
+    // TODO handle directory without images chosen
+    LinkedList<File> currentLevel = new LinkedList<>();
 
-		// TODO refactor: Function<File, List<File>>
-		if (recursive) {
-			LinkedList<File> queue = new LinkedList<>();
-			queue.add(chosenDirectory);
-			while (!queue.isEmpty()) {
-				File currentDirectory = queue.removeFirst();
+    // TODO refactor: Function<File, List<File>>
+    if (recursive) {
+      LinkedList<File> queue = new LinkedList<>();
+      queue.add(chosenDirectory);
+      while (!queue.isEmpty()) {
+        File currentDirectory = queue.removeFirst();
 
-				File[] subdirectories = currentDirectory.listFiles();
-				if (subdirectories != null) {
-					List<File> asList = Arrays.asList(subdirectories);
-					Map<Boolean, List<File>> partition = asList.stream()
-							.collect(Collectors.partitioningBy(File::isDirectory));
+        File[] subdirectories = currentDirectory.listFiles();
+        if (subdirectories != null) {
+          List<File> asList = Arrays.asList(subdirectories);
+          Map<Boolean, List<File>> partition = asList.stream()
+              .collect(Collectors.partitioningBy(File::isDirectory));
 
-					// add directories to queue
-					queue.addAll(partition.get(Boolean.TRUE));
+          // add directories to queue
+          queue.addAll(partition.get(Boolean.TRUE));
 
-					// add matching files to current level
-					partition.get(Boolean.FALSE).stream()//
-							.filter(fileRegex)//
-							.forEach(currentLevel::add);
-				}
-			}
-		} else {
-			File[] allFiles = chosenDirectory.listFiles();
-			if (allFiles != null) {
-				for (File aFile : allFiles) {
-					if (fileRegex.test(aFile)) {
-						currentLevel.add(aFile);
-					}
-				}
-			}
-		}
+          // add matching files to current level
+          partition.get(Boolean.FALSE).stream()//
+              .filter(fileRegex)//
+              .forEach(currentLevel::add);
+        }
+      }
+    } else {
+      File[] allFiles = chosenDirectory.listFiles();
+      if (allFiles != null) {
+        for (File aFile : allFiles) {
+          if (fileRegex.test(aFile)) {
+            currentLevel.add(aFile);
+          }
+        }
+      }
+    }
 
-		currentLevel.stream()//
-				.filter(f -> !ignoredFiles.contains(f))//
-				.forEach(graph::addVertex);
+    currentLevel.stream()//
+        .filter(f -> !ignoredFiles.contains(f))//
+        .forEach(graph::addVertex);
 
-		// Handle files that were in edges AND on ignore list.
-		Set<File> vertexSet = graph.vertexSet();
-		HashSet<File> intersection = new HashSet<>(ignoredFiles);
-		intersection.retainAll(vertexSet);
-		intersection.forEach(ignoredFiles::remove); // Removing from graph would risk too much data loss.
-		log.warn("these {} files were in the edges and in ignore list of central storage: {}", intersection.size(),
-				intersection);
-		List<File> inconsistencies = centralStorage.getInconsistencies();
-		long count = inconsistencies.stream()//
-				.filter(intersection::contains)//
-				.count();
-		log.warn(" {} are in global AND local inconsistencies", count);
+    // Handle files that were in edges AND on ignore list.
+    Set<File> vertexSet = graph.vertexSet();
+    HashSet<File> intersection = new HashSet<>(ignoredFiles);
+    intersection.retainAll(vertexSet);
+    intersection.forEach(ignoredFiles::remove); // Removing from graph would risk too much data
+                                                // loss.
+    log.warn("these {} files were in the edges and in ignore list of central storage: {}",
+        intersection.size(), intersection);
+    List<File> inconsistencies = centralStorage.getInconsistencies();
+    long count = inconsistencies.stream()//
+        .filter(intersection::contains)//
+        .count();
+    log.warn(" {} are in global AND local inconsistencies", count);
 
-		// choosing algorithms
-		Map<String, ACandidateChooser> newChoosingAlorithms = choosingAlgorithms;
-		WinnerOrientedCandidateChooser winnerOriented = new WinnerOrientedCandidateChooser(graph);
-		newChoosingAlorithms.put("Winner Oriented", winnerOriented);
-		newChoosingAlorithms.put("Date Distance", new DateDistanceCandidateChooser(graph));
-		newChoosingAlorithms.put("Chronologic KO", new ChronologicKoCandidateChooser(graph));
-		newChoosingAlorithms.put("Random", new RandomCandidateChooser(graph));
-		newChoosingAlorithms.put("MaxNewEdges", new MaxNewEdgesCandidateChoser(graph));
-		newChoosingAlorithms.put("RankingTopDown", new RankingTopDownCandidateChooser(graph));
-		newChoosingAlorithms.put("BiSection", new BiSectionCandidateChooser(graph));
-		newChoosingAlorithms.put("MinimumDegree", new MinimumDegreeCandidateChooser(graph));
-		SameWinLoseRationCandidateChooser sameWinLoseRatio = new SameWinLoseRationCandidateChooser(graph);
-		newChoosingAlorithms.put("SameWinLoseRatio", sameWinLoseRatio);
+    // choosing algorithms
+    Map<String, ACandidateChooser> newChoosingAlorithms = choosingAlgorithms;
+    WinnerOrientedCandidateChooser winnerOriented = new WinnerOrientedCandidateChooser(graph);
+    newChoosingAlorithms.put("Winner Oriented", winnerOriented);
+    newChoosingAlorithms.put("Date Distance", new DateDistanceCandidateChooser(graph));
+    newChoosingAlorithms.put("Chronologic KO", new ChronologicKoCandidateChooser(graph));
+    newChoosingAlorithms.put("Random", new RandomCandidateChooser(graph));
+    newChoosingAlorithms.put("MaxNewEdges", new MaxNewEdgesCandidateChoser(graph));
+    newChoosingAlorithms.put("RankingTopDown", new RankingTopDownCandidateChooser(graph));
+    newChoosingAlorithms.put("BiSection", new BiSectionCandidateChooser(graph));
+    newChoosingAlorithms.put("MinimumDegree", new MinimumDegreeCandidateChooser(graph));
+    SameWinLoseRationCandidateChooser sameWinLoseRatio = new SameWinLoseRationCandidateChooser(
+        graph);
+    newChoosingAlorithms.put("SameWinLoseRatio", sameWinLoseRatio);
 
-		choosingAlgorithm = sameWinLoseRatio;
+    choosingAlgorithm = sameWinLoseRatio;
 
-	}
+  }
 
-	public List<ResultListEntry> getResultList() {
+  public List<ResultListEntry> getResultList() {
 
-		// Comparator<File> winnerFirstComparator =
-		// Comparator.comparing(graph2::outDegreeOf).reversed()
-		// .thenComparing(Comparator.comparing(graph2::inDegreeOf));
-		Comparator<File> winnerFirstComparator = Comparator.comparing(graph::getWinLoseDifference,
-				Comparator.reverseOrder());
-		List<ResultListEntry> resultList = graph.vertexSet().stream() //
-				.sorted(winnerFirstComparator)//
-				.map(graph::fileToResultEntry)//
-				.collect(Collectors.toList());
-		// zip would be cool
-		for (int i = 0; i < resultList.size(); i++) {
-			resultList.get(i).place = i + 1;
-		}
+    // Comparator<File> winnerFirstComparator =
+    // Comparator.comparing(graph2::outDegreeOf).reversed()
+    // .thenComparing(Comparator.comparing(graph2::inDegreeOf));
+    Comparator<File> winnerFirstComparator = Comparator.comparing(graph::getWinLoseDifference,
+        Comparator.reverseOrder());
+    List<ResultListEntry> resultList = graph.vertexSet().stream() //
+        .sorted(winnerFirstComparator)//
+        .map(graph::fileToResultEntry)//
+        .collect(Collectors.toList());
+    // zip would be cool
+    for (int i = 0; i < resultList.size(); i++) {
+      resultList.get(i).place = i + 1;
+    }
 
-		// at the end append all ignored files. The user should to see them to
-		// maybe un-ignore or delete them.
-		ignoredFiles.stream().map(file -> {
-			ResultListEntry resultListEntry = new ResultListEntry();
-			resultListEntry.file = file;
-			resultListEntry.ignored = true;
-			return resultListEntry;
-		}).forEach(resultList::add);
+    // at the end append all ignored files. The user should to see them to
+    // maybe un-ignore or delete them.
+    ignoredFiles.stream().map(file -> {
+      ResultListEntry resultListEntry = new ResultListEntry();
+      resultListEntry.file = file;
+      resultListEntry.ignored = true;
+      return resultListEntry;
+    }).forEach(resultList::add);
 
-		return resultList;
-	}
+    return resultList;
+  }
 
-	public void makeDecision(File pWinner, File pLoser) {
+  public void makeDecision(File pWinner, File pLoser) {
 
-		graph.addEdge(pWinner, pLoser);
-		centralStorage.addEdges(graph);
+    graph.addEdge(pWinner, pLoser);
+    centralStorage.addEdges(graph);
 
-		// Clean up inconsistent central storage (when files are both ignored and in the graph).
-		centralStorage.removeFromIgnored(pLoser);
-		centralStorage.removeFromIgnored(pWinner);
+    // Clean up inconsistent central storage (when files are both ignored and in the graph).
+    centralStorage.removeFromIgnored(pLoser);
+    centralStorage.removeFromIgnored(pWinner);
 
-	}
+  }
 
-	public Set<String> getChoosingAlgorithms() {
-		return choosingAlgorithms.keySet();
-	}
+  public Set<String> getChoosingAlgorithms() {
+    return choosingAlgorithms.keySet();
+  }
 
-	public void setChoosingAlgorithm(String pAlgorithmName) {
-		ACandidateChooser newAlgorithm = choosingAlgorithms.get(pAlgorithmName);
-		Objects.requireNonNull(newAlgorithm);
-		choosingAlgorithm = newAlgorithm;
-		log.info(pAlgorithmName);
-	}
+  public void setChoosingAlgorithm(String pAlgorithmName) {
+    ACandidateChooser newAlgorithm = choosingAlgorithms.get(pAlgorithmName);
+    Objects.requireNonNull(newAlgorithm);
+    choosingAlgorithm = newAlgorithm;
+    log.info(pAlgorithmName);
+  }
 
-	public Optional<Pair<File, File>> getNextToCompare() {
+  public Optional<Pair<File, File>> getNextToCompare() {
 
-		Optional<Pair<File, File>> nextToCompare = Optional.empty();
+    Optional<Pair<File, File>> nextToCompare = Optional.empty();
 
-		// loop until we find two existing images
-		boolean bothExist = false;
-		while (!bothExist) {
-			// TODO what if this loop removes all nodes ?!
+    // loop until we find two existing images
+    boolean bothExist = false;
+    while (!bothExist) {
+      // TODO what if this loop removes all nodes ?!
 
-			long start = System.currentTimeMillis();
-			nextToCompare = choosingAlgorithm.getNextCandidates();
-			long duration = System.currentTimeMillis() - start;
-			log.trace("time needed to find next pair: {} ms", duration);
+      long start = System.currentTimeMillis();
+      nextToCompare = choosingAlgorithm.getNextCandidates();
+      long duration = System.currentTimeMillis() - start;
+      log.trace("time needed to find next pair: {} ms", duration);
 
-			if (nextToCompare.isPresent()) {
-				Pair<File, File> pair = nextToCompare.get();
+      if (nextToCompare.isPresent()) {
+        Pair<File, File> pair = nextToCompare.get();
 
-				// check for images that have been deleted in the meantime
-				File key = pair.getKey();
-				File value = pair.getValue();
+        // check for images that have been deleted in the meantime
+        File key = pair.getKey();
+        File value = pair.getValue();
 
-				log.trace("nextToCompare: key={}    value={}", key.getName(), value.getName());
+        log.trace("nextToCompare: key={}    value={}", key.getName(), value.getName());
 
-				bothExist = true;
-				if (!key.exists()) {
-					graph.removeVertex(key);
-					bothExist = false;
-				}
-				if (!value.exists()) {
-					graph.removeVertex(value);
-					bothExist = false;
-				}
-			} else {
-				bothExist = true; // break the loop.
-			}
+        bothExist = true;
+        if (!key.exists()) {
+          graph.removeVertex(key);
+          bothExist = false;
+        }
+        if (!value.exists()) {
+          graph.removeVertex(value);
+          bothExist = false;
+        }
+      } else {
+        bothExist = true; // break the loop.
+      }
 
-		}
+    }
 
-		return nextToCompare;
+    return nextToCompare;
 
-	}
+  }
 
-	/**
-	 * @param file
-	 *            This file will no longer appear in a battle scene. In ranking scenes it will be marked as ignored and
-	 *            have no place. All ignored files are placed after the worst rated file.
-	 */
-	void ignoreFile(File file) {
+  /**
+   * @param file
+   *          This file will no longer appear in a battle scene. In ranking scenes it will be marked
+   *          as ignored and have no place. All ignored files are placed after the worst rated file.
+   */
+  void ignoreFile(File file) {
 
-		log.info("added file {}. ", file);
-		log.trace(" Now on ignore: {}", ignoredFiles);
+    log.info("added file {}. ", file);
+    log.trace(" Now on ignore: {}", ignoredFiles);
 
-		ignoredFiles.add(file);
-		centralStorage.addToIgnored(file);
+    ignoredFiles.add(file);
+    centralStorage.addToIgnored(file);
 
-		graph.removeVertex(file);
-		centralStorage.removeFromEdges(file);
+    graph.removeVertex(file);
+    centralStorage.removeFromEdges(file);
 
-	}
+  }
 
-	double getProgress() {
-		int maxEdgeCount = graph.getMaxEdgeCount();
-		int currentEdgeCount = graph.getCurrentEdgeCount();
-		return Double.valueOf(currentEdgeCount) / Double.valueOf(maxEdgeCount);
-	}
+  double getProgress() {
+    int maxEdgeCount = graph.getMaxEdgeCount();
+    int currentEdgeCount = graph.getCurrentEdgeCount();
+    return Double.valueOf(currentEdgeCount) / Double.valueOf(maxEdgeCount);
+  }
 
-	/**
-	 * @param fileToReset
-	 *            remove this file from the graph and then add it again to remove all edges to and from the file. It
-	 *            also allows to bring ignored files back into the fight.
-	 */
-	void reset(File fileToReset) {
-		graph.removeVertex(fileToReset);
-		graph.addVertex(fileToReset);
-		centralStorage.removeFromEdges(fileToReset);
+  /**
+   * @param fileToReset
+   *          remove this file from the graph and then add it again to remove all edges to and from
+   *          the file. It also allows to bring ignored files back into the fight.
+   */
+  void reset(File fileToReset) {
+    graph.removeVertex(fileToReset);
+    graph.addVertex(fileToReset);
+    centralStorage.removeFromEdges(fileToReset);
 
-		ignoredFiles.remove(fileToReset);
-		centralStorage.removeFromIgnored(fileToReset);
-	}
+    ignoredFiles.remove(fileToReset);
+    centralStorage.removeFromIgnored(fileToReset);
+  }
 
-	private void checkFinished() {
+  private void checkFinished() {
 
-	}
+  }
 
-	ReadOnlyBooleanProperty finishedProperty() {
-		return graph.finishedProperty();
-	}
+  ReadOnlyBooleanProperty finishedProperty() {
+    return graph.finishedProperty();
+  }
 
 }
