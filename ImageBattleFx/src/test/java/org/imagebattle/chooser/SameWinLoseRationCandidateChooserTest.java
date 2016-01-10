@@ -21,26 +21,27 @@ import javafx.util.Pair;
  */
 public class SameWinLoseRationCandidateChooserTest {
 
-	@Test
-	public void test() {
-		// prepare
-		TransitiveDiGraph graph = new TransitiveDiGraph();
-		// Files do not have to exist for this test.
-		File fileWin = new File("a");
-		File fileLose = new File("b");
-		File fileNoFight = new File("c");
-		graph.addVertex(fileWin);
-		graph.addVertex(fileLose);
-		graph.addVertex(fileNoFight);
-		graph.addEdge(fileWin, fileLose);
-		// after this setup all nodes have different win lose rations (+1, 0, -1) but the fight is not finished.
-		SameWinLoseRationCandidateChooser chooser = new SameWinLoseRationCandidateChooser(graph);
+  @Test
+  public void test() {
+    // prepare
+    TransitiveDiGraph graph = new TransitiveDiGraph();
+    // Files do not have to exist for this test.
+    File fileWin = new File("a");
+    File fileLose = new File("b");
+    File fileNoFight = new File("c");
+    graph.addVertex(fileWin);
+    graph.addVertex(fileLose);
+    graph.addVertex(fileNoFight);
+    graph.addEdge(fileWin, fileLose);
+    // after this setup all nodes have different win lose rations (+1, 0, -1) but the fight is not
+    // finished.
+    SameWinLoseRationCandidateChooser chooser = new SameWinLoseRationCandidateChooser(graph);
 
-		// act
-		Optional<Pair<File, File>> nextCandidates = chooser.getNextCandidates();
+    // act
+    Optional<Pair<File, File>> nextCandidates = chooser.getNextCandidates();
 
-		// assert
-		assertTrue(nextCandidates.isPresent());
-	}
+    // assert
+    assertTrue(nextCandidates.isPresent());
+  }
 
 }

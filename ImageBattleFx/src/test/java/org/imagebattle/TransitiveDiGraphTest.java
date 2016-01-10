@@ -20,142 +20,144 @@ import javafx.util.Pair;
  *
  */
 public class TransitiveDiGraphTest {
-	@Test
-	public void addEdgeSimple() {
-		// prepare
-		TransitiveDiGraph graph = new TransitiveDiGraph();
-		File fileA = new File("a");
-		File fileB = new File("b");
-		graph.addVertex(fileA);
-		graph.addVertex(fileB);
+  @Test
+  public void addEdgeSimple() {
+    // prepare
+    TransitiveDiGraph graph = new TransitiveDiGraph();
+    File fileA = new File("a");
+    File fileB = new File("b");
+    graph.addVertex(fileA);
+    graph.addVertex(fileB);
 
-		// act
-		graph.addEdge(fileA, fileB);
+    // act
+    graph.addEdge(fileA, fileB);
 
-		// assert
-		Assert.assertTrue("containsRightDirection", graph.containsEdge(fileA, fileB));
-		Assert.assertFalse("contains false direction", graph.containsEdge(fileB, fileA));
-		Assert.assertTrue("contains any direction", graph.containsAnyEdge(fileB, fileA));
+    // assert
+    Assert.assertTrue("containsRightDirection", graph.containsEdge(fileA, fileB));
+    Assert.assertFalse("contains false direction", graph.containsEdge(fileB, fileA));
+    Assert.assertTrue("contains any direction", graph.containsAnyEdge(fileB, fileA));
 
-	}
+  }
 
-	@Test
-	public void getCalculatedCandidateCount() {
-		// prepare
-		TransitiveDiGraph graph = new TransitiveDiGraph();
-		File fileA = new File("a");
-		File fileB = new File("b");
-		File fileC = new File("c");
-		graph.addVertex(fileA);
-		graph.addVertex(fileB);
-		graph.addVertex(fileC);
-		graph.addEdge(fileA, fileB);
+  @Test
+  public void getCalculatedCandidateCount() {
+    // prepare
+    TransitiveDiGraph graph = new TransitiveDiGraph();
+    File fileA = new File("a");
+    File fileB = new File("b");
+    File fileC = new File("c");
+    graph.addVertex(fileA);
+    graph.addVertex(fileB);
+    graph.addVertex(fileC);
+    graph.addEdge(fileA, fileB);
 
-		// act
-		int calculatedCandidateCount = graph.getCalculatedCandidateCount();
+    // act
+    int calculatedCandidateCount = graph.getCalculatedCandidateCount();
 
-		// assert
-		assertThat(calculatedCandidateCount, is(2));
+    // assert
+    assertThat(calculatedCandidateCount, is(2));
 
-	}
+  }
 
-	@Test
-	public void getCandidateStream() {
-		// prepare
-		TransitiveDiGraph graph = new TransitiveDiGraph();
-		File fileA = new File("a");
-		File fileB = new File("b");
-		File fileC = new File("c");
-		graph.addVertex(fileA);
-		graph.addVertex(fileB);
-		graph.addVertex(fileC);
-		graph.addEdge(fileA, fileB);
+  @Test
+  public void getCandidateStream() {
+    // prepare
+    TransitiveDiGraph graph = new TransitiveDiGraph();
+    File fileA = new File("a");
+    File fileB = new File("b");
+    File fileC = new File("c");
+    graph.addVertex(fileA);
+    graph.addVertex(fileB);
+    graph.addVertex(fileC);
+    graph.addEdge(fileA, fileB);
 
-		// act
-		Stream<Pair<File, File>> candidateStream = graph.getCandidateStream();
-		List<Pair<File, File>> candidateList = candidateStream.collect(Collectors.toList());
+    // act
+    Stream<Pair<File, File>> candidateStream = graph.getCandidateStream();
+    List<Pair<File, File>> candidateList = candidateStream.collect(Collectors.toList());
 
-		// assert
-		assertThat("size", candidateList.size(), is(2));
-		boolean containsAC = false;
-		boolean containsBC = false;
-		for (Pair<File, File> pair : candidateList) {
-			File key = pair.getKey();
-			File value = pair.getValue();
-			containsAC |= (fileA.equals(key) && fileC.equals(value)) || (fileC.equals(key) && fileA.equals(value));
-			containsBC |= (fileB.equals(key) && fileC.equals(value)) || (fileC.equals(key) && fileB.equals(value));
-		}
+    // assert
+    assertThat("size", candidateList.size(), is(2));
+    boolean containsAC = false;
+    boolean containsBC = false;
+    for (Pair<File, File> pair : candidateList) {
+      File key = pair.getKey();
+      File value = pair.getValue();
+      containsAC |= (fileA.equals(key) && fileC.equals(value))
+          || (fileC.equals(key) && fileA.equals(value));
+      containsBC |= (fileB.equals(key) && fileC.equals(value))
+          || (fileC.equals(key) && fileB.equals(value));
+    }
 
-		assertThat("AC", containsAC, is(true));
-		assertThat("BC", containsBC, is(true));
+    assertThat("AC", containsAC, is(true));
+    assertThat("BC", containsBC, is(true));
 
-	}
+  }
 
-	@Test
-	public void unfinished() {
-		// prepare
-		TransitiveDiGraph graph = new TransitiveDiGraph();
-		File fileA = new File("a");
-		File fileB = new File("b");
-		File fileC = new File("c");
-		graph.addVertex(fileA);
-		graph.addVertex(fileB);
-		graph.addVertex(fileC);
-		graph.addEdge(fileA, fileB);
+  @Test
+  public void unfinished() {
+    // prepare
+    TransitiveDiGraph graph = new TransitiveDiGraph();
+    File fileA = new File("a");
+    File fileB = new File("b");
+    File fileC = new File("c");
+    graph.addVertex(fileA);
+    graph.addVertex(fileB);
+    graph.addVertex(fileC);
+    graph.addEdge(fileA, fileB);
 
-		// act
-		boolean finished = graph.finishedProperty().get();
+    // act
+    boolean finished = graph.finishedProperty().get();
 
-		// assert
-		assertThat(finished, is(false));
+    // assert
+    assertThat(finished, is(false));
 
-	}
+  }
 
-	@Test
-	public void finishByAdd() {
+  @Test
+  public void finishByAdd() {
 
-		// prepare
-		TransitiveDiGraph graph = new TransitiveDiGraph();
-		File fileA = new File("a");
-		File fileB = new File("b");
-		File fileC = new File("c");
-		graph.addVertex(fileA);
-		graph.addVertex(fileB);
-		graph.addVertex(fileC);
-		graph.addEdge(fileA, fileB);
+    // prepare
+    TransitiveDiGraph graph = new TransitiveDiGraph();
+    File fileA = new File("a");
+    File fileB = new File("b");
+    File fileC = new File("c");
+    graph.addVertex(fileA);
+    graph.addVertex(fileB);
+    graph.addVertex(fileC);
+    graph.addEdge(fileA, fileB);
 
-		// act
-		graph.addEdge(fileB, fileC);
-		boolean finishedAfterAdd = graph.finishedProperty().get();
+    // act
+    graph.addEdge(fileB, fileC);
+    boolean finishedAfterAdd = graph.finishedProperty().get();
 
-		// assert
-		assertThat(finishedAfterAdd, is(true));
-	}
+    // assert
+    assertThat(finishedAfterAdd, is(true));
+  }
 
-	@Test
-	public void unfinishByRemove() {
+  @Test
+  public void unfinishByRemove() {
 
-		// prepare
-		TransitiveDiGraph graph = new TransitiveDiGraph();
-		File fileA = new File("a");
-		File fileB = new File("b");
-		File fileC = new File("c");
-		graph.addVertex(fileA);
-		graph.addVertex(fileB);
-		graph.addVertex(fileC);
-		graph.addEdge(fileA, fileB);
+    // prepare
+    TransitiveDiGraph graph = new TransitiveDiGraph();
+    File fileA = new File("a");
+    File fileB = new File("b");
+    File fileC = new File("c");
+    graph.addVertex(fileA);
+    graph.addVertex(fileB);
+    graph.addVertex(fileC);
+    graph.addEdge(fileA, fileB);
 
-		// act
-		graph.removeVertex(fileC);
-		boolean finishedAfterRemove = graph.finishedProperty().get();
+    // act
+    graph.removeVertex(fileC);
+    boolean finishedAfterRemove = graph.finishedProperty().get();
 
-		// assert
-		assertThat(finishedAfterRemove, is(true));
-	}
+    // assert
+    assertThat(finishedAfterRemove, is(true));
+  }
 
-	@Test
-	public void addEdgesTransitive() {
-		TransitiveDiGraph graph = new TransitiveDiGraph();
+  @Test
+  public void addEdgesTransitive() {
+    TransitiveDiGraph graph = new TransitiveDiGraph();
 
-	}
+  }
 }
