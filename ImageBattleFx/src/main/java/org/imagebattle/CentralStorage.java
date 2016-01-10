@@ -341,6 +341,13 @@ public class CentralStorage {
     return connection;
   }
 
+  /**
+   * This table stores the hashes of files. The table storing the edges will use the integer ids of
+   * this table.
+   * 
+   * @param connection
+   *          Use {@link #getSqliteConnection(File)}.
+   */
   public static void createMediaObjectsTable(Connection connection) {
     try {
       Statement statement = connection.createStatement();
@@ -356,6 +363,7 @@ public class CentralStorage {
    * Depends on {@link #createMediaObjectsTable(Connection)}.
    * 
    * @param connection
+   *          Use {@link #getSqliteConnection(File)}.
    */
   public static void createFilesTable(Connection connection) {
     try {
