@@ -349,14 +349,9 @@ public class CentralStorage {
    *          Use {@link #getSqliteConnection(File)}.
    */
   public static void createMediaObjectsTable(Connection connection) {
-    try {
-      Statement statement = connection.createStatement();
-      String createTable = " create table media_objects("
-          + "id INTEGER PRIMARY KEY, hash TEXT, media_type TEXT) ";
-      statement.execute(createTable);
-    } catch (SQLException e) {
-      throw new RuntimeException(e);
-    }
+    String createTable = " create table media_objects("
+        + "id INTEGER PRIMARY KEY, hash TEXT, media_type TEXT) ";
+    executeSql(connection, createTable);
   }
 
   /**
@@ -366,13 +361,23 @@ public class CentralStorage {
    *          Use {@link #getSqliteConnection(File)}.
    */
   public static void createFilesTable(Connection connection) {
+    String createTable = " create table files(" + //
+        " media_object INTEGER NON NULL," + //
+        " absolute_path TEXT," + //
+        " FOREIGN KEY(media_object) REFERENCES media_objects(id)  ) ";
+    executeSql(connection, createTable);
+  }
+
+  /**
+   * @param connection
+   *          Use {@link #getSqliteConnection(File)}.
+   * @param sql
+   *          Any sql statement that you want to be executed and don't expect an result from.
+   */
+  public static void executeSql(Connection connection, String sql) {
     try {
       Statement statement = connection.createStatement();
-      String createTable = " create table files(" + //
-          " media_object INTEGER NON NULL," //
-          + " absolute_path TEXT," + //
-          " FOREIGN KEY(media_object) REFERENCES media_objects(id)  ) ";
-      statement.execute(createTable);
+      statement.execute(sql);
     } catch (SQLException e) {
       throw new RuntimeException(e);
     }
