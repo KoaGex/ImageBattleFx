@@ -18,6 +18,8 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -318,16 +320,54 @@ public class CentralStorage {
 
   }
 
-  public static void sqlite() {
-    Connection c = null;
+  /**
+   * @param databaseFile
+   *          File that should not be a directory. If it does not exist it will be created.
+   * @return {@link Connection} to the database file. It is open and can be used.
+   */
+  public static Connection getSqliteConnection(File databaseFile) {
+
+    // TODO if file does not exist, it needs to be created with all tables
+    Connection connection = null;
     try {
-      File file = getFile("mediaBattleFx.db");
       Class.forName("org.sqlite.JDBC");
-      c = DriverManager.getConnection("jdbc:sqlite:" + file.getAbsolutePath());
-    } catch (Exception e) {
+      connection = DriverManager.getConnection("jdbc:sqlite:" + databaseFile.getAbsolutePath());
+    } catch (SQLException e) {
       System.err.println(e.getClass().getName() + ": " + e.getMessage());
-      System.exit(0);
+    } catch (ClassNotFoundException e) {
+      System.err.println(e.getClass().getName() + ": " + e.getMessage());
     }
     System.out.println("Opened database successfully");
+    return connection;
   }
+
+  public static void createMediaObjectsTable(Connection connection) {
+    try {
+      Statement statement = connection.createStatement();
+      String createTable = " create table media_objects("
+          + "id INTEGER PRIMARY KEY, hash TEXT, media_type TEXT) ";
+      statement.execute(createTable);
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  /**
+   * Depends on {@link #createMediaObjectsTable(Connection)}.
+   * 
+   * @param connection
+   */
+  public static void createFilesTable(Connection connection) {
+    try {
+      Statement statement = connection.createStatement();
+      String createTable = " create table files(" + //
+          " media_object INTEGER NON NULL," //
+          + " absolute_path TEXT," + //
+          " FOREIGN KEY(media_object) REFERENCES media_objects(id)  ) ";
+      statement.execute(createTable);
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
 }

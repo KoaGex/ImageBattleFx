@@ -13,7 +13,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -27,11 +32,10 @@ import org.jgrapht.graph.DefaultEdge;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-
-import jdk.nashorn.internal.ir.annotations.Ignore;
 
 /**
  * 
@@ -41,222 +45,284 @@ import jdk.nashorn.internal.ir.annotations.Ignore;
  *
  */
 public class CentralStorageTest {
-	private static final Logger LOG = LogManager.getLogger();
+  private static final Logger LOG = LogManager.getLogger();
 
-	@Rule
-	public TemporaryFolder tf = new TemporaryFolder();
+  @Rule
+  public TemporaryFolder tf = new TemporaryFolder();
 
-	static final String IGNORE_FILE_TEST = "ignoreFile_test.csv";
-	static final String GRAPH_FILE_TEST = "graphFile_test.csv";
-	Path ignorePath = Paths.get(System.getProperty("user.home"), IGNORE_FILE_TEST);
-	Path graphPath = Paths.get(System.getProperty("user.home"), GRAPH_FILE_TEST);
-	private CentralStorage centralStorage;
+  static final String IGNORE_FILE_TEST = "ignoreFile_test.csv";
+  static final String GRAPH_FILE_TEST = "graphFile_test.csv";
+  Path ignorePath = Paths.get(System.getProperty("user.home"), IGNORE_FILE_TEST);
+  Path graphPath = Paths.get(System.getProperty("user.home"), GRAPH_FILE_TEST);
+  private CentralStorage centralStorage;
 
-	@Before
-	public void setUp() throws Exception {
-		centralStorage = new CentralStorage(GRAPH_FILE_TEST, IGNORE_FILE_TEST);
-	}
+  @Before
+  public void setUp() throws Exception {
+    centralStorage = new CentralStorage(GRAPH_FILE_TEST, IGNORE_FILE_TEST);
+  }
 
-	@After
-	public void tearDown() throws Exception {
-		LOG.info("delete files");
-		Files.deleteIfExists(graphPath);
-		Files.deleteIfExists(ignorePath);
-	}
+  @After
+  public void tearDown() throws Exception {
+    LOG.info("delete files");
+    Files.deleteIfExists(graphPath);
+    Files.deleteIfExists(ignorePath);
+  }
 
-	@Test
-	public void addEdges() throws IOException {
-		// prepare
-		TransitiveDiGraph graph = new TransitiveDiGraph();
-		File file1 = tf.newFile();
-		File file2 = tf.newFile();
-		graph.addVertex(file1);
-		graph.addVertex(file2);
-		graph.addEdge(file1, file2);
+  @Test
+  public void addEdges() throws IOException {
+    // prepare
+    TransitiveDiGraph graph = new TransitiveDiGraph();
+    File file1 = tf.newFile();
+    File file2 = tf.newFile();
+    graph.addVertex(file1);
+    graph.addVertex(file2);
+    graph.addEdge(file1, file2);
 
-		// act
-		centralStorage.addEdges(graph);
+    // act
+    centralStorage.addEdges(graph);
 
-		// assert
-		List<String> lines = Files.readAllLines(graphPath);
-		assertThat("line count", lines.size(), is(1));
+    // assert
+    List<String> lines = Files.readAllLines(graphPath);
+    assertThat("line count", lines.size(), is(1));
 
-		String expectedLine = file1.getAbsolutePath() + ";" + file2.getAbsolutePath();
-		assertThat("line content", lines.get(0), is(expectedLine));
-	}
+    String expectedLine = file1.getAbsolutePath() + ";" + file2.getAbsolutePath();
+    assertThat("line content", lines.get(0), is(expectedLine));
+  }
 
-	@Test
-	public void testReadGraph() throws IOException {
-		LOG.info("read");
+  @Test
+  public void testReadGraph() throws IOException {
+    LOG.info("read");
 
-		// prepare
-		BufferedWriter writer = Files.newBufferedWriter(graphPath, StandardOpenOption.CREATE_NEW,
-				StandardOpenOption.WRITE);
-		File file1 = tf.newFile("file1");
-		File file2 = tf.newFile("file2");
-		File file3 = tf.newFile("file3");
-		writer.write(file1.getAbsolutePath() + ";" + file2.getAbsolutePath() + System.lineSeparator());
-		writer.write(file1.getAbsolutePath() + ";" + file3.getAbsolutePath() + System.lineSeparator());
-		writer.flush();
-		writer.close();
+    // prepare
+    BufferedWriter writer = Files.newBufferedWriter(graphPath, StandardOpenOption.CREATE_NEW,
+        StandardOpenOption.WRITE);
+    File file1 = tf.newFile("file1");
+    File file2 = tf.newFile("file2");
+    File file3 = tf.newFile("file3");
+    writer.write(file1.getAbsolutePath() + ";" + file2.getAbsolutePath() + System.lineSeparator());
+    writer.write(file1.getAbsolutePath() + ";" + file3.getAbsolutePath() + System.lineSeparator());
+    writer.flush();
+    writer.close();
 
-		// act
-		TransitiveDiGraph readGraph = centralStorage.readGraph();
+    // act
+    TransitiveDiGraph readGraph = centralStorage.readGraph();
 
-		// test
-		Set<DefaultEdge> edgeSet = readGraph.edgeSet();
-		Assert.assertThat("edge count", edgeSet.size(), is(2));
-		Set<File> vertexSet = readGraph.vertexSet();
-		Assert.assertThat("node count", vertexSet.size(), is(3));
-		assertThat("edge 1 -> 2", readGraph.containsEdge(file1, file2), is(true));
-		assertThat("edge 2 -> 1", readGraph.containsEdge(file2, file1), is(false));
-		assertThat("edge 1 -> 3", readGraph.containsEdge(file1, file3), is(true));
-		assertThat("edge 3 -> 1", readGraph.containsEdge(file3, file1), is(false));
-		assertThat("no 2-3 edge allowed", readGraph.containsAnyEdge(file2, file3), is(false));
-	}
+    // test
+    Set<DefaultEdge> edgeSet = readGraph.edgeSet();
+    Assert.assertThat("edge count", edgeSet.size(), is(2));
+    Set<File> vertexSet = readGraph.vertexSet();
+    Assert.assertThat("node count", vertexSet.size(), is(3));
+    assertThat("edge 1 -> 2", readGraph.containsEdge(file1, file2), is(true));
+    assertThat("edge 2 -> 1", readGraph.containsEdge(file2, file1), is(false));
+    assertThat("edge 1 -> 3", readGraph.containsEdge(file1, file3), is(true));
+    assertThat("edge 3 -> 1", readGraph.containsEdge(file3, file1), is(false));
+    assertThat("no 2-3 edge allowed", readGraph.containsAnyEdge(file2, file3), is(false));
+  }
 
-	/**
-	 * An absolute path to a file within the ignore file should be read.
-	 * 
-	 * @throws IOException
-	 */
-	@Test
-	public void testReadIgnoreFile() throws IOException {
-		// prepare
-		File file = new File("ignore_test_file.jpg");
-		file = new File(file.getAbsolutePath());
-		List<String> asList = Arrays.asList(file.getAbsolutePath());
-		Files.write(ignorePath, asList);
+  /**
+   * An absolute path to a file within the ignore file should be read.
+   * 
+   * @throws IOException
+   */
+  @Test
+  public void testReadIgnoreFile() throws IOException {
+    // prepare
+    File file = new File("ignore_test_file.jpg");
+    file = new File(file.getAbsolutePath());
+    List<String> asList = Arrays.asList(file.getAbsolutePath());
+    Files.write(ignorePath, asList);
 
-		// act
-		Set<File> readIgnoreFile = centralStorage.readIgnoreFile();
+    // act
+    Set<File> readIgnoreFile = centralStorage.readIgnoreFile();
 
-		// assert
-		Assert.assertThat("ignoreFile does not contain the correct file", readIgnoreFile, hasItem(file));
-		Assert.assertThat("count", readIgnoreFile.size(), IsEqual.equalTo(1));
-	}
+    // assert
+    Assert.assertThat("ignoreFile does not contain the correct file", readIgnoreFile,
+        hasItem(file));
+    Assert.assertThat("count", readIgnoreFile.size(), IsEqual.equalTo(1));
+  }
 
-	/**
-	 * {@link CentralStorage#removeFromEdges(File)}
-	 * 
-	 * @throws IOException
-	 */
-	@Test
-	public void testRemoveFromEdges() throws IOException {
-		// prepare
-		TransitiveDiGraph graph = new TransitiveDiGraph();
-		File file1 = tf.newFile();
-		File file2 = tf.newFile();
-		graph.addVertex(file1);
-		graph.addVertex(file2);
-		graph.addEdge(file1, file2);
-		centralStorage.addEdges(graph);
+  /**
+   * {@link CentralStorage#removeFromEdges(File)}
+   * 
+   * @throws IOException
+   */
+  @Test
+  public void testRemoveFromEdges() throws IOException {
+    // prepare
+    TransitiveDiGraph graph = new TransitiveDiGraph();
+    File file1 = tf.newFile();
+    File file2 = tf.newFile();
+    graph.addVertex(file1);
+    graph.addVertex(file2);
+    graph.addEdge(file1, file2);
+    centralStorage.addEdges(graph);
 
-		// act
-		File fileToIgnore = file1;
-		centralStorage.removeFromEdges(fileToIgnore);
+    // act
+    File fileToIgnore = file1;
+    centralStorage.removeFromEdges(fileToIgnore);
 
-		// assert
-		TransitiveDiGraph readGraph = centralStorage.readGraph();
-		assertThat(readGraph.vertexSet(), IsNot.not(IsCollectionContaining.hasItem(fileToIgnore)));
-	}
+    // assert
+    TransitiveDiGraph readGraph = centralStorage.readGraph();
+    assertThat(readGraph.vertexSet(), IsNot.not(IsCollectionContaining.hasItem(fileToIgnore)));
+  }
 
-	@Test
-	public void addToIgnore() throws IOException {
-		// prepare
-		File file = tf.newFile();
+  @Test
+  public void addToIgnore() throws IOException {
+    // prepare
+    File file = tf.newFile();
 
-		// act
-		centralStorage.addToIgnored(file);
+    // act
+    centralStorage.addToIgnored(file);
 
-		// assert
-		List<String> lines = Files.readAllLines(ignorePath);
-		assertThat("line count", lines.size(), is(1));
-		assertThat("line content", lines.get(0), is(file.getAbsolutePath()));
+    // assert
+    List<String> lines = Files.readAllLines(ignorePath);
+    assertThat("line count", lines.size(), is(1));
+    assertThat("line content", lines.get(0), is(file.getAbsolutePath()));
 
-	}
+  }
 
-	@Test
-	public void removeFromIgnore() throws IOException {
+  @Test
+  public void removeFromIgnore() throws IOException {
 
-		// prepare
-		File file = tf.newFile();
-		File file2 = tf.newFile();
-		centralStorage.addToIgnored(file);
-		centralStorage.addToIgnored(file2);
+    // prepare
+    File file = tf.newFile();
+    File file2 = tf.newFile();
+    centralStorage.addToIgnored(file);
+    centralStorage.addToIgnored(file2);
 
-		// act
-		centralStorage.removeFromIgnored(file);
+    // act
+    centralStorage.removeFromIgnored(file);
 
-		// assert
-		Set<File> ignoredFiles = centralStorage.readIgnoreFile();
-		assertThat(ignoredFiles.size(), is(1));
-	}
+    // assert
+    Set<File> ignoredFiles = centralStorage.readIgnoreFile();
+    assertThat(ignoredFiles.size(), is(1));
+  }
 
-	@Test
-	public void readFileWithUmlauts() throws IOException {
-		// prepare
-		Files.write(ignorePath, "ü".getBytes());
+  @Test
+  public void readFileWithUmlauts() throws IOException {
+    // prepare
+    Files.write(ignorePath, "ü".getBytes());
 
-		// act
-		Set<File> set = centralStorage.readIgnoreFile();
+    // act
+    Set<File> set = centralStorage.readIgnoreFile();
 
-		// assert
-		File onlyFile = set.iterator().next();
-		assertThat(onlyFile.getName(), is("ü"));
+    // assert
+    File onlyFile = set.iterator().next();
+    assertThat(onlyFile.getName(), is("ü"));
 
-	}
+  }
 
-	@Test
-	public void fileContentHash() throws IOException {
-		// prepare
-		File newFile = tf.newFile();
-		FileOutputStream fileOutputStream = new FileOutputStream(newFile);
-		for (int i = 0; i < 1_000_000; i++) {
-			fileOutputStream.write(new byte[] { 1, 2, 3, 4 });
-			fileOutputStream.flush();
-		}
-		fileOutputStream.close();
-		FileInputStream fileInputStream = new FileInputStream(newFile);
-		System.err.println("file size:" + newFile.length());
+  @Test
+  @Ignore
+  public void fileContentHash() throws IOException {
+    // prepare
+    File newFile = tf.newFile();
+    FileOutputStream fileOutputStream = new FileOutputStream(newFile);
+    for (int i = 0; i < 1_000_000; i++) {
+      fileOutputStream.write(new byte[] { 1, 2, 3, 4 });
+      fileOutputStream.flush();
+    }
+    fileOutputStream.close();
+    FileInputStream fileInputStream = new FileInputStream(newFile);
+    System.err.println("file size:" + newFile.length());
 
-		// act
-		long start = System.currentTimeMillis();
-		String fileContentHash = CentralStorage.fileContentHash(newFile);
-		long end = System.currentTimeMillis();
-		System.err.println((end - start));
+    // act
+    long start = System.currentTimeMillis();
+    String fileContentHash = CentralStorage.fileContentHash(newFile);
+    long end = System.currentTimeMillis();
+    System.err.println((end - start));
 
-		// assert
-		System.err.println(fileContentHash);
-	}
+    // assert
+    System.err.println(fileContentHash);
+  }
 
-	@Ignore
-	// @Test
-	public void allFilesFileContentHash() throws IOException {
-		CentralStorage storage = new CentralStorage(CentralStorage.GRAPH_FILE, CentralStorage.IGNORE_FILE);
-		TransitiveDiGraph readGraph = storage.readGraph();
+  @Ignore
+  // @Test
+  public void allFilesFileContentHash() throws IOException {
+    CentralStorage storage = new CentralStorage(CentralStorage.GRAPH_FILE,
+        CentralStorage.IGNORE_FILE);
+    TransitiveDiGraph readGraph = storage.readGraph();
 
-		LOG.debug("start nodes");
-		long start = System.currentTimeMillis();
-		List<String> nodes = readGraph.vertexSet().stream()//
-				.map(CentralStorage::fileContentHash)//
-				.collect(Collectors.toList());
-		long end = System.currentTimeMillis();
-		System.err.println("nodes:" + (end - start));
+    LOG.debug("start nodes");
+    long start = System.currentTimeMillis();
+    List<String> nodes = readGraph.vertexSet().stream()//
+        .map(CentralStorage::fileContentHash)//
+        .collect(Collectors.toList());
+    long end = System.currentTimeMillis();
+    System.err.println("nodes:" + (end - start));
 
-		Set<File> ignoreFile = storage.readIgnoreFile();
+    Set<File> ignoreFile = storage.readIgnoreFile();
 
-		long startI = System.currentTimeMillis();
-		List<String> ignored = ignoreFile.stream()//
-				.map(CentralStorage::fileContentHash)//
-				.collect(Collectors.toList());
-		long endI = System.currentTimeMillis();
-		System.err.println("ignored:" + (endI - startI));
+    long startI = System.currentTimeMillis();
+    List<String> ignored = ignoreFile.stream()//
+        .map(CentralStorage::fileContentHash)//
+        .collect(Collectors.toList());
+    long endI = System.currentTimeMillis();
+    System.err.println("ignored:" + (endI - startI));
 
-	}
+  }
 
-	@Test
-	public void sqlite() throws IOException {
-		CentralStorage.sqlite();
-	}
+  @Test
+  public void getSqliteConnection() throws IOException, SQLException {
+    // prepare
+    File file = tf.newFile();
+    file.delete();
+
+    // act
+    Connection sqliteConnection = CentralStorage.getSqliteConnection(file);
+
+    // assert
+    assertThat(file.exists(), is(true));
+    assertThat(sqliteConnection.isClosed(), is(false));
+    sqliteConnection.close(); // exception would fail the test
+  }
+
+  @Test
+  public void createMediaObjectsTable() throws IOException, SQLException {
+    Connection connection = CentralStorage.getSqliteConnection(tf.newFile());
+
+    Statement statement = connection.createStatement();
+    String queryAllTableNames = "SELECT name FROM sqlite_master WHERE type='table'";
+    ResultSet resultSet = statement.executeQuery(queryAllTableNames);
+    final boolean anyTableExistedBefore = resultSet.next();
+
+    HashSet<Object> tableNames = new HashSet<>();
+    while (resultSet.next()) {
+      String tableName = resultSet.getString(1);
+      tableNames.add(tableName);
+    }
+
+    // act
+    CentralStorage.createMediaObjectsTable(connection);
+
+    // assert
+    assertThat(anyTableExistedBefore, is(false));
+    ResultSet resultSet2 = statement.executeQuery(queryAllTableNames);
+    String tableName = resultSet2.getString(1);
+    assertThat(tableName, is("media_objects"));
+  }
+
+  @Test
+  public void createFilesTable() throws IOException, SQLException {
+    Connection connection = CentralStorage.getSqliteConnection(tf.newFile());
+
+    // act
+    CentralStorage.createMediaObjectsTable(connection);
+    CentralStorage.createFilesTable(connection);
+
+    // assert
+    Statement statement = connection.createStatement();
+    String queryAllTableNames = "SELECT name FROM sqlite_master WHERE type='table'";
+    ResultSet resultSet = statement.executeQuery(queryAllTableNames);
+
+    HashSet<String> tableNames = new HashSet<>();
+    while (resultSet.next()) {
+      String tableName = resultSet.getString(1);
+      tableNames.add(tableName);
+    }
+
+    assertThat(tableNames, IsCollectionContaining.hasItem("media_objects"));
+    assertThat(tableNames, IsCollectionContaining.hasItem("files"));
+  }
+
 }
