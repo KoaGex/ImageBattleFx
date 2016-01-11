@@ -374,7 +374,7 @@ public class CentralStorage {
    * @param sql
    *          Any sql statement that you want to be executed and don't expect an result from.
    */
-  public static void executeSql(Connection connection, String sql) {
+  private static void executeSql(Connection connection, String sql) {
     try {
       Statement statement = connection.createStatement();
       statement.execute(sql);
@@ -383,4 +383,21 @@ public class CentralStorage {
     }
   }
 
+  /**
+   * Add one item to the media_objects table. One mediaObject represents one image, musicTrack or
+   * whatever else may be added.
+   * 
+   * @param connection
+   *          Use {@link #getSqliteConnection(File)}. TODO refactor
+   * @param hash
+   *          Hash should be created by SHA-256 over the whole file content. It should uniquely
+   *          identify the mediaObject. This way an image can be recognized after it was moved.
+   * @param mediaType
+   *          Currently String is allowed. This may later become an enum.
+   */
+  public static void addMediaObject(Connection connection, String hash, String mediaType) {
+    String insert = " insert into media_objects(hash,media_type) values ('" + hash + "','"
+        + mediaType + "')";
+    executeSql(connection, insert);
+  }
 }

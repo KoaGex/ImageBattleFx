@@ -325,4 +325,13 @@ public class CentralStorageTest {
     assertThat(tableNames, IsCollectionContaining.hasItem("files"));
   }
 
+  @Test
+  public void addMediaObject() throws IOException, SQLException {
+
+    Connection connection = CentralStorage.getSqliteConnection(tf.newFile());
+    CentralStorage.createMediaObjectsTable(connection);
+
+    CentralStorage.addMediaObject(connection, "DAJSDLLJ21lasdVNKASJUD2749324", "IMAGE");
+    // FIXME query and assert
+  }
 }
