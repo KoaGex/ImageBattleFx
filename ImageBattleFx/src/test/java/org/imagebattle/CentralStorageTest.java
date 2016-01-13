@@ -13,12 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -32,7 +27,6 @@ import org.jgrapht.graph.DefaultEdge;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -213,7 +207,6 @@ public class CentralStorageTest {
   }
 
   @Test
-  @Ignore
   public void fileContentHash() throws IOException {
     // prepare
     File newFile = tf.newFile();
@@ -236,8 +229,7 @@ public class CentralStorageTest {
     System.err.println(fileContentHash);
   }
 
-  @Ignore
-  // @Test
+  @Test
   public void allFilesFileContentHash() throws IOException {
     CentralStorage storage = new CentralStorage(CentralStorage.GRAPH_FILE,
         CentralStorage.IGNORE_FILE);
@@ -246,6 +238,7 @@ public class CentralStorageTest {
     LOG.debug("start nodes");
     long start = System.currentTimeMillis();
     List<String> nodes = readGraph.vertexSet().stream()//
+        .limit(10)//
         .map(CentralStorage::fileContentHash)//
         .collect(Collectors.toList());
     long end = System.currentTimeMillis();
@@ -255,6 +248,7 @@ public class CentralStorageTest {
 
     long startI = System.currentTimeMillis();
     List<String> ignored = ignoreFile.stream()//
+        .limit(10)//
         .map(CentralStorage::fileContentHash)//
         .collect(Collectors.toList());
     long endI = System.currentTimeMillis();
@@ -262,76 +256,4 @@ public class CentralStorageTest {
 
   }
 
-  @Test
-  public void getSqliteConnection() throws IOException, SQLException {
-    // prepare
-    File file = tf.newFile();
-    file.delete();
-
-    // act
-    Connection sqliteConnection = CentralStorage.getSqliteConnection(file);
-
-    // assert
-    assertThat(file.exists(), is(true));
-    assertThat(sqliteConnection.isClosed(), is(false));
-    sqliteConnection.close(); // exception would fail the test
-  }
-
-  @Test
-  public void createMediaObjectsTable() throws IOException, SQLException {
-    Connection connection = CentralStorage.getSqliteConnection(tf.newFile());
-
-    Statement statement = connection.createStatement();
-    String queryAllTableNames = "SELECT name FROM sqlite_master WHERE type='table'";
-    ResultSet resultSet = statement.executeQuery(queryAllTableNames);
-    final boolean anyTableExistedBefore = resultSet.next();
-
-    HashSet<Object> tableNames = new HashSet<>();
-    while (resultSet.next()) {
-      String tableName = resultSet.getString(1);
-      tableNames.add(tableName);
-    }
-
-    // act
-    CentralStorage.createMediaObjectsTable(connection);
-
-    // assert
-    assertThat(anyTableExistedBefore, is(false));
-    ResultSet resultSet2 = statement.executeQuery(queryAllTableNames);
-    String tableName = resultSet2.getString(1);
-    assertThat(tableName, is("media_objects"));
-  }
-
-  @Test
-  public void createFilesTable() throws IOException, SQLException {
-    Connection connection = CentralStorage.getSqliteConnection(tf.newFile());
-
-    // act
-    CentralStorage.createMediaObjectsTable(connection);
-    CentralStorage.createFilesTable(connection);
-
-    // assert
-    Statement statement = connection.createStatement();
-    String queryAllTableNames = "SELECT name FROM sqlite_master WHERE type='table'";
-    ResultSet resultSet = statement.executeQuery(queryAllTableNames);
-
-    HashSet<String> tableNames = new HashSet<>();
-    while (resultSet.next()) {
-      String tableName = resultSet.getString(1);
-      tableNames.add(tableName);
-    }
-
-    assertThat(tableNames, IsCollectionContaining.hasItem("media_objects"));
-    assertThat(tableNames, IsCollectionContaining.hasItem("files"));
-  }
-
-  @Test
-  public void addMediaObject() throws IOException, SQLException {
-
-    Connection connection = CentralStorage.getSqliteConnection(tf.newFile());
-    CentralStorage.createMediaObjectsTable(connection);
-
-    CentralStorage.addMediaObject(connection, "DAJSDLLJ21lasdVNKASJUD2749324", "IMAGE");
-    // FIXME query and assert
-  }
 }

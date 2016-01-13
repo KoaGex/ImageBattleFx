@@ -16,10 +16,6 @@ import java.nio.file.Paths;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -318,86 +314,5 @@ public class CentralStorage {
       throw new RuntimeException(e);
     }
 
-  }
-
-  /**
-   * @param databaseFile
-   *          File that should not be a directory. If it does not exist it will be created.
-   * @return {@link Connection} to the database file. It is open and can be used.
-   */
-  public static Connection getSqliteConnection(File databaseFile) {
-
-    // TODO if file does not exist, it needs to be created with all tables
-    Connection connection = null;
-    try {
-      Class.forName("org.sqlite.JDBC");
-      connection = DriverManager.getConnection("jdbc:sqlite:" + databaseFile.getAbsolutePath());
-    } catch (SQLException e) {
-      System.err.println(e.getClass().getName() + ": " + e.getMessage());
-    } catch (ClassNotFoundException e) {
-      System.err.println(e.getClass().getName() + ": " + e.getMessage());
-    }
-    System.out.println("Opened database successfully");
-    return connection;
-  }
-
-  /**
-   * This table stores the hashes of files. The table storing the edges will use the integer ids of
-   * this table.
-   * 
-   * @param connection
-   *          Use {@link #getSqliteConnection(File)}.
-   */
-  public static void createMediaObjectsTable(Connection connection) {
-    String createTable = " create table media_objects("
-        + "id INTEGER PRIMARY KEY, hash TEXT, media_type TEXT) ";
-    executeSql(connection, createTable);
-  }
-
-  /**
-   * Depends on {@link #createMediaObjectsTable(Connection)}.
-   * 
-   * @param connection
-   *          Use {@link #getSqliteConnection(File)}.
-   */
-  public static void createFilesTable(Connection connection) {
-    String createTable = " create table files(" + //
-        " media_object INTEGER NON NULL," + //
-        " absolute_path TEXT," + //
-        " FOREIGN KEY(media_object) REFERENCES media_objects(id)  ) ";
-    executeSql(connection, createTable);
-  }
-
-  /**
-   * @param connection
-   *          Use {@link #getSqliteConnection(File)}.
-   * @param sql
-   *          Any sql statement that you want to be executed and don't expect an result from.
-   */
-  private static void executeSql(Connection connection, String sql) {
-    try {
-      Statement statement = connection.createStatement();
-      statement.execute(sql);
-    } catch (SQLException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  /**
-   * Add one item to the media_objects table. One mediaObject represents one image, musicTrack or
-   * whatever else may be added.
-   * 
-   * @param connection
-   *          Use {@link #getSqliteConnection(File)}. TODO refactor
-   * @param hash
-   *          Hash should be created by SHA-256 over the whole file content. It should uniquely
-   *          identify the mediaObject. This way an image can be recognized after it was moved.
-   * @param mediaType
-   *          Currently String is allowed. This may later become an enum.
-   */
-  public static void addMediaObject(Connection connection, String hash, String mediaType) {
-    String insert = " insert into media_objects(hash,media_type) values ('" + hash + "','"
-        + mediaType + "')";
-    executeSql(connection, insert);
   }
 }
