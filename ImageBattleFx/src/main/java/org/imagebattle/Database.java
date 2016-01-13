@@ -5,6 +5,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Collection;
 import java.util.LinkedList;
 
 import javax.sql.DataSource;
@@ -80,16 +81,16 @@ public class Database {
    * @param mediaType
    *          Currently String is allowed. This may later become an enum.
    */
-  public void addMediaObject(String hash, String mediaType) {
+  public void addMediaObject(String hash, MediaType mediaType) {
     String insert = " insert into media_objects(hash,media_type) values ('" + hash + "','"
-        + mediaType + "')";
+        + mediaType.name() + "')";
     executeSql(insert);
   }
 
   /**
    * @return Zero or more {@link MediaObject} that match the given criteria.
    */
-  public Iterable<MediaObject> queryMediaObjects() {
+  public Collection<MediaObject> queryMediaObjects() {
     String query = "select * from media_objects";
     LinkedList<MediaObject> result;
     try {

@@ -21,4 +21,16 @@ public class MediaObject {
     this.mediaType = mediaType;
   }
 
+  public int id() {
+    return id;
+  }
+
+  public String hash() {
+    return hash;
+  }
+
+  public MediaType mediaType() {
+    return mediaType;
+  }
+
 }

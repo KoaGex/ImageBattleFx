@@ -1,5 +1,6 @@
 package org.imagebattle;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
 import java.io.IOException;
@@ -7,8 +8,10 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Collection;
 import java.util.HashSet;
 
+import org.hamcrest.collection.IsCollectionWithSize;
 import org.hamcrest.core.Is;
 import org.hamcrest.core.IsCollectionContaining;
 import org.junit.After;
@@ -104,10 +107,22 @@ public class DatabaseTest {
   @Test
   public void addMediaObject() throws IOException, SQLException {
 
+    // prepare
     database.createMediaObjectsTable();
 
-    database.addMediaObject("DAJSDLLJ21lasdVNKASJUD2749324", "IMAGE");
-    // FIXME query and assert
+    String hash = "DAJSDLLJ21lasdVNKASJUD2749324";
+
+    // act
+    database.addMediaObject(hash, MediaType.IMAGE);
+
+    // assert
+    Collection<MediaObject> queryResults = database.queryMediaObjects();
+
+    assertThat(queryResults, IsCollectionWithSize.hasSize(1));
+    MediaObject mediaObject = queryResults.stream().findAny().get();
+    assertThat(mediaObject.id(), is(1));
+    assertThat(mediaObject.hash(), is(hash));
+    assertThat(mediaObject.mediaType(), is(MediaType.IMAGE));
   }
 
 }
