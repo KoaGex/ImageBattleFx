@@ -1,19 +1,15 @@
 package org.imagebattle;
 
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
 import java.io.IOException;
 import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.Collection;
-import java.util.HashSet;
 
 import org.hamcrest.collection.IsCollectionWithSize;
-import org.hamcrest.core.Is;
-import org.hamcrest.core.IsCollectionContaining;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -59,56 +55,18 @@ public class DatabaseTest {
   // }
 
   @Test
-  public void createMediaObjectsTable() throws IOException, SQLException {
+  public void constructorCreatesTables() {
+    Collection<String> tables = database.tables();
 
-    Statement statement = connection.createStatement();
-    String queryAllTableNames = "SELECT name FROM sqlite_master WHERE type='table'";
-    ResultSet resultSet = statement.executeQuery(queryAllTableNames);
-    final boolean anyTableExistedBefore = resultSet.next();
+    assertThat(tables, hasItem("media_objects"));
+    assertThat(tables, hasItem("files"));
 
-    HashSet<Object> tableNames = new HashSet<>();
-    while (resultSet.next()) {
-      String tableName = resultSet.getString(1);
-      tableNames.add(tableName);
-    }
-
-    // act
-    database.createMediaObjectsTable();
-
-    // assert
-    assertThat(anyTableExistedBefore, Is.is(false));
-    ResultSet resultSet2 = statement.executeQuery(queryAllTableNames);
-    String tableName = resultSet2.getString(1);
-    assertThat(tableName, Is.is("media_objects"));
-  }
-
-  @Test
-  public void createFilesTable() throws IOException, SQLException {
-
-    // act
-    database.createMediaObjectsTable();
-    database.createFilesTable();
-
-    // assert
-    Statement statement = connection.createStatement();
-    String queryAllTableNames = "SELECT name FROM sqlite_master WHERE type='table'";
-    ResultSet resultSet = statement.executeQuery(queryAllTableNames);
-
-    HashSet<String> tableNames = new HashSet<>();
-    while (resultSet.next()) {
-      String tableName = resultSet.getString(1);
-      tableNames.add(tableName);
-    }
-
-    assertThat(tableNames, IsCollectionContaining.hasItem("media_objects"));
-    assertThat(tableNames, IsCollectionContaining.hasItem("files"));
   }
 
   @Test
   public void addMediaObject() throws IOException, SQLException {
 
     // prepare
-    database.createMediaObjectsTable();
 
     String hash = "DAJSDLLJ21lasdVNKASJUD2749324";
 
@@ -123,6 +81,11 @@ public class DatabaseTest {
     assertThat(mediaObject.id(), is(1));
     assertThat(mediaObject.hash(), is(hash));
     assertThat(mediaObject.mediaType(), is(MediaType.IMAGE));
+  }
+
+  @Test
+  public void addFile() {
+    database.addMediaObject("fhaildfaADLSD12dLJASd", MediaType.IMAGE);
   }
 
 }
