@@ -11,11 +11,10 @@ import java.util.Random;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import javafx.util.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.imagebattle.TransitiveDiGraph;
-
-import javafx.util.Pair;
 
 public class SameWinLoseRationCandidateChooser extends ACandidateChooser {
   private static Logger log = LogManager.getLogger();
@@ -56,7 +55,7 @@ public class SameWinLoseRationCandidateChooser extends ACandidateChooser {
       File to = getRandomElement(biggestGroupList);
       if (!Objects.equals(to, from) && !graph.containsAnyEdge(from, to)) {
         result = new Pair<File, File>(from, to);
-        log.debug("guess success at try: {}", i);
+        log.trace("guess success at try: {}", i);
         break;
       }
     }
