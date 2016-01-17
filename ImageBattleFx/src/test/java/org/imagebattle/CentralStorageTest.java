@@ -6,8 +6,6 @@ import static org.junit.Assert.assertThat;
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -16,7 +14,6 @@ import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -203,56 +200,6 @@ public class CentralStorageTest {
     // assert
     File onlyFile = set.iterator().next();
     assertThat(onlyFile.getName(), is("ü"));
-
-  }
-
-  @Test
-  public void fileContentHash() throws IOException {
-    // prepare
-    File newFile = tf.newFile();
-    FileOutputStream fileOutputStream = new FileOutputStream(newFile);
-    for (int i = 0; i < 1_000_000; i++) {
-      fileOutputStream.write(new byte[] { 1, 2, 3, 4 });
-      fileOutputStream.flush();
-    }
-    fileOutputStream.close();
-    FileInputStream fileInputStream = new FileInputStream(newFile);
-    System.err.println("file size:" + newFile.length());
-
-    // act
-    long start = System.currentTimeMillis();
-    String fileContentHash = CentralStorage.fileContentHash(newFile);
-    long end = System.currentTimeMillis();
-    System.err.println((end - start));
-
-    // assert
-    System.err.println(fileContentHash);
-  }
-
-  @Test
-  public void allFilesFileContentHash() throws IOException {
-    CentralStorage storage = new CentralStorage(CentralStorage.GRAPH_FILE,
-        CentralStorage.IGNORE_FILE);
-    TransitiveDiGraph readGraph = storage.readGraph();
-
-    LOG.debug("start nodes");
-    long start = System.currentTimeMillis();
-    List<String> nodes = readGraph.vertexSet().stream()//
-        .limit(10)//
-        .map(CentralStorage::fileContentHash)//
-        .collect(Collectors.toList());
-    long end = System.currentTimeMillis();
-    System.err.println("nodes:" + (end - start));
-
-    Set<File> ignoreFile = storage.readIgnoreFile();
-
-    long startI = System.currentTimeMillis();
-    List<String> ignored = ignoreFile.stream()//
-        .limit(10)//
-        .map(CentralStorage::fileContentHash)//
-        .collect(Collectors.toList());
-    long endI = System.currentTimeMillis();
-    System.err.println("ignored:" + (endI - startI));
 
   }
 
