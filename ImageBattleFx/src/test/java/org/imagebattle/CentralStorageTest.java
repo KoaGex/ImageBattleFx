@@ -21,15 +21,12 @@ import org.hamcrest.core.IsCollectionContaining;
 import org.hamcrest.core.IsEqual;
 import org.hamcrest.core.IsNot;
 import org.jgrapht.graph.DefaultEdge;
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 /**
- * 
  * Testing {@link CentralStorage}.
  * 
  * @author KoaGex
@@ -41,26 +38,13 @@ public class CentralStorageTest {
   @Rule
   public TemporaryFolder tf = new TemporaryFolder();
 
-  static final String IGNORE_FILE_TEST = "ignoreFile_test.csv";
-  static final String GRAPH_FILE_TEST = "graphFile_test.csv";
-  static final String SQLITE_FILE_TEST = "sqliteFile_test.csv";
-  private Path ignorePath = Paths.get(System.getProperty("user.home"), IGNORE_FILE_TEST);
-  private Path graphPath = Paths.get(System.getProperty("user.home"), GRAPH_FILE_TEST);
-  private Path sqlitePath = Paths.get(System.getProperty("user.home"), SQLITE_FILE_TEST);
-  private CentralStorage centralStorage;
+  private Path graphPath = Paths.get(System.getProperty("user.home"),
+      CentralStorageRule.GRAPH_FILE_TEST);
+  private Path ignorePath = Paths.get(System.getProperty("user.home"),
+      CentralStorageRule.IGNORE_FILE_TEST);
 
-  @Before
-  public void setUp() throws Exception {
-    centralStorage = new CentralStorage(IGNORE_FILE_TEST, GRAPH_FILE_TEST, SQLITE_FILE_TEST);
-  }
-
-  @After
-  public void tearDown() throws Exception {
-    LOG.info("delete files");
-    Files.deleteIfExists(graphPath);
-    Files.deleteIfExists(ignorePath);
-    Files.deleteIfExists(sqlitePath);
-  }
+  @Rule
+  public CentralStorageRule centralStorageRule = new CentralStorageRule();
 
   @Test
   public void addEdges() throws IOException {
@@ -71,6 +55,7 @@ public class CentralStorageTest {
     graph.addVertex(file1);
     graph.addVertex(file2);
     graph.addEdge(file1, file2);
+    CentralStorage centralStorage = centralStorageRule.centralStorage();
 
     // act
     centralStorage.addEdges(graph);
@@ -97,6 +82,7 @@ public class CentralStorageTest {
     writer.write(file1.getAbsolutePath() + ";" + file3.getAbsolutePath() + System.lineSeparator());
     writer.flush();
     writer.close();
+    CentralStorage centralStorage = centralStorageRule.centralStorage();
 
     // act
     TransitiveDiGraph readGraph = centralStorage.readGraph();
@@ -125,6 +111,7 @@ public class CentralStorageTest {
     file = new File(file.getAbsolutePath());
     List<String> asList = Arrays.asList(file.getAbsolutePath());
     Files.write(ignorePath, asList);
+    CentralStorage centralStorage = centralStorageRule.centralStorage();
 
     // act
     Set<File> readIgnoreFile = centralStorage.readIgnoreFile();
@@ -149,6 +136,7 @@ public class CentralStorageTest {
     graph.addVertex(file1);
     graph.addVertex(file2);
     graph.addEdge(file1, file2);
+    CentralStorage centralStorage = centralStorageRule.centralStorage();
     centralStorage.addEdges(graph);
 
     // act
@@ -164,6 +152,7 @@ public class CentralStorageTest {
   public void addToIgnore() throws IOException {
     // prepare
     File file = tf.newFile();
+    CentralStorage centralStorage = centralStorageRule.centralStorage();
 
     // act
     centralStorage.addToIgnored(file);
@@ -181,6 +170,7 @@ public class CentralStorageTest {
     // prepare
     File file = tf.newFile();
     File file2 = tf.newFile();
+    CentralStorage centralStorage = centralStorageRule.centralStorage();
     centralStorage.addToIgnored(file);
     centralStorage.addToIgnored(file2);
 
@@ -196,6 +186,7 @@ public class CentralStorageTest {
   public void readFileWithUmlauts() throws IOException {
     // prepare
     Files.write(ignorePath, "ü".getBytes());
+    CentralStorage centralStorage = centralStorageRule.centralStorage();
 
     // act
     Set<File> set = centralStorage.readIgnoreFile();
