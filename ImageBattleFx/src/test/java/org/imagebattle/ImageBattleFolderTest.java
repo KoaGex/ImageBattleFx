@@ -6,74 +6,77 @@ import static org.junit.Assert.assertThat;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Set;
 
 import org.hamcrest.core.IsNot;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 public class ImageBattleFolderTest {
 
-  Path ignorePath = Paths.get(System.getProperty("user.home"), CentralStorageTest.IGNORE_FILE_TEST);
-  Path graphPath = Paths.get(System.getProperty("user.home"), CentralStorageTest.GRAPH_FILE_TEST);
-  CentralStorage centralStorage;
+  @Rule
+  public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
   @Rule
-  public TemporaryFolder tf = new TemporaryFolder();
-
-  @Before
-  public void setUp() throws Exception {
-    CentralStorage centralStorage = new CentralStorage(CentralStorage.GRAPH_FILE,
-        CentralStorage.IGNORE_FILE, CentralStorage.SQLITE_FILE);
-  }
-
-  @After
-  public void tearDown() throws Exception {
-    Files.deleteIfExists(graphPath);
-    Files.deleteIfExists(ignorePath);
-  }
+  public CentralStorageRule centralStorageRule = new CentralStorageRule();
 
   @Test
-  public void constructor() throws IOException {
+  public void constructorEdge() throws IOException {
     // prepare
     TransitiveDiGraph graph = new TransitiveDiGraph();
-    File fileWinner = tf.newFile();
-    File fileLoser = tf.newFile();
-    File fileIgnored = tf.newFile();
+    File fileWinner = temporaryFolder.newFile();
+    File fileLoser = temporaryFolder.newFile();
     graph.addVertex(fileWinner);
     graph.addVertex(fileLoser);
     graph.addEdge(fileWinner, fileLoser);
+    CentralStorage centralStorage = centralStorageRule.centralStorage();
     centralStorage.addEdges(graph);
-    centralStorage.addToIgnored(fileIgnored);
-    File fileNew = tf.newFile();
-    File root = tf.getRoot();
+
+    File root = temporaryFolder.getRoot();
     Boolean recursive = true;
     // act
     ImageBattleFolder folder = new ImageBattleFolder(centralStorage, root, file -> true, recursive);
 
     // assert
     List<ResultListEntry> resultList = folder.getResultList();
-    assertThat(resultList.size(), is(4));
     ResultListEntry winnerEntry = resultList.get(0);
     assertThat(winnerEntry.wins, is(1));
 
+    assertThat(resultList.size(), is(2));
+  }
+
+  @Test
+  public void constructorIgnore() throws IOException {
+    // prepare
+    CentralStorage centralStorage = centralStorageRule.centralStorage();
+
+    File fileIgnored = temporaryFolder.newFile();
+    centralStorage.addToIgnored(fileIgnored);
+
+    File root = temporaryFolder.getRoot();
+    Boolean recursive = true;
+    // act
+    ImageBattleFolder folder = new ImageBattleFolder(centralStorage, root, file -> true, recursive);
+
+    // assert
+    List<ResultListEntry> resultList = folder.getResultList();
+    ResultListEntry winnerEntry = resultList.get(0);
+    assertThat(winnerEntry.ignored, is(true));
+
+    assertThat(resultList.size(), is(1));
   }
 
   @Test
   public void makeDecision() throws IOException {
     // prepare
     // new ImageBattleFolder(chosenDirectory, fileRegex, recursive)
-    File root = tf.getRoot();
-    File fileWinner = tf.newFile();
-    File fileLoser = tf.newFile();
+    File root = temporaryFolder.getRoot();
+    File fileWinner = temporaryFolder.newFile();
+    File fileLoser = temporaryFolder.newFile();
     Boolean recursive = false;
+    CentralStorage centralStorage = centralStorageRule.centralStorage();
     ImageBattleFolder folder = new ImageBattleFolder(centralStorage, root, file -> true, recursive);
 
     // act
@@ -94,18 +97,20 @@ public class ImageBattleFolderTest {
   @Test
   public void fixInconsistenceByDecision() throws IOException {
     // prepare
-    File root = tf.getRoot();
-    Boolean recursive = true;
-    File fileWinner = tf.newFile();
-    File fileLoser = tf.newFile();
-    File fileInconsistend = tf.newFile();
+    File fileWinner = temporaryFolder.newFile();
+    File fileLoser = temporaryFolder.newFile();
+    File fileInconsistend = temporaryFolder.newFile();
     TransitiveDiGraph graph = new TransitiveDiGraph();
     graph.addVertex(fileWinner);
     graph.addVertex(fileLoser);
     graph.addVertex(fileInconsistend);
     graph.addEdge(fileInconsistend, fileLoser);
+    CentralStorage centralStorage = centralStorageRule.centralStorage();
     centralStorage.addEdges(graph);
     centralStorage.addToIgnored(fileInconsistend);
+
+    File root = temporaryFolder.getRoot();
+    Boolean recursive = true;
     ImageBattleFolder folder = new ImageBattleFolder(centralStorage, root, file -> true, recursive);
 
     // act
@@ -120,9 +125,10 @@ public class ImageBattleFolderTest {
   @Test
   public void testIgnoreFile() throws IOException {
     // prepare
-    File root = tf.getRoot();
-    File file = tf.newFile();
+    File root = temporaryFolder.getRoot();
+    File file = temporaryFolder.newFile();
     Boolean recursive = false;
+    CentralStorage centralStorage = centralStorageRule.centralStorage();
     ImageBattleFolder folder = new ImageBattleFolder(centralStorage, root, f -> true, recursive);
 
     // act
@@ -142,18 +148,19 @@ public class ImageBattleFolderTest {
   @Test
   public void fixInconsistencyByIgnore() throws IOException {
     // prepare
-    File root = tf.getRoot();
-    Boolean recursive = true;
-    File fileWinner = tf.newFile();
-    File fileLoser = tf.newFile();
-    File fileInconsistend = tf.newFile();
+    File fileWinner = temporaryFolder.newFile();
+    File fileLoser = temporaryFolder.newFile();
+    File fileInconsistend = temporaryFolder.newFile();
     TransitiveDiGraph graph = new TransitiveDiGraph();
     graph.addVertex(fileWinner);
     graph.addVertex(fileLoser);
     graph.addVertex(fileInconsistend);
     graph.addEdge(fileInconsistend, fileLoser);
+    CentralStorage centralStorage = centralStorageRule.centralStorage();
     centralStorage.addEdges(graph);
     centralStorage.addToIgnored(fileInconsistend);
+    File root = temporaryFolder.getRoot();
+    Boolean recursive = true;
     ImageBattleFolder folder = new ImageBattleFolder(centralStorage, root, file -> true, recursive);
 
     // act
