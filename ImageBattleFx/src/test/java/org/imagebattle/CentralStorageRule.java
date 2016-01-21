@@ -20,7 +20,7 @@ public class CentralStorageRule extends ExternalResource {
 
   @Override
   protected void before() throws Throwable {
-    centralStorage = new CentralStorage(IGNORE_FILE_TEST, GRAPH_FILE_TEST, SQLITE_FILE_TEST);
+    centralStorage = new CentralStorage(GRAPH_FILE_TEST, IGNORE_FILE_TEST, SQLITE_FILE_TEST);
   }
 
   @Override
