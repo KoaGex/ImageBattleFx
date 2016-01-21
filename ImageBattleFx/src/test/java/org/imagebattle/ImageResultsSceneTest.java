@@ -5,17 +5,16 @@ import static org.junit.Assert.assertThat;
 
 import java.io.File;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.testfx.framework.junit.ApplicationTest;
-
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.scene.Node;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
 import javafx.stage.Stage;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+import org.testfx.framework.junit.ApplicationTest;
 
 public class ImageResultsSceneTest extends ApplicationTest {
   @Rule
@@ -29,8 +28,8 @@ public class ImageResultsSceneTest extends ApplicationTest {
 
     File folderDir = new File("src/test/resources");
 
-    CentralStorage centralStorage = new CentralStorage(CentralStorageTest.GRAPH_FILE_TEST,
-        CentralStorageTest.IGNORE_FILE_TEST);
+    CentralStorage centralStorage = new CentralStorage(CentralStorage.GRAPH_FILE,
+        CentralStorage.IGNORE_FILE, CentralStorage.SQLITE_FILE);
     Boolean recursive = false;
     ImageBattleFolder imageBattleFolder = new ImageBattleFolder(centralStorage, folderDir,
         ImageBattleApplication.imagePredicate, recursive);

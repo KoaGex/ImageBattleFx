@@ -43,13 +43,15 @@ public class CentralStorageTest {
 
   static final String IGNORE_FILE_TEST = "ignoreFile_test.csv";
   static final String GRAPH_FILE_TEST = "graphFile_test.csv";
-  Path ignorePath = Paths.get(System.getProperty("user.home"), IGNORE_FILE_TEST);
-  Path graphPath = Paths.get(System.getProperty("user.home"), GRAPH_FILE_TEST);
+  static final String SQLITE_FILE_TEST = "sqliteFile_test.csv";
+  private Path ignorePath = Paths.get(System.getProperty("user.home"), IGNORE_FILE_TEST);
+  private Path graphPath = Paths.get(System.getProperty("user.home"), GRAPH_FILE_TEST);
+  private Path sqlitePath = Paths.get(System.getProperty("user.home"), SQLITE_FILE_TEST);
   private CentralStorage centralStorage;
 
   @Before
   public void setUp() throws Exception {
-    centralStorage = new CentralStorage(GRAPH_FILE_TEST, IGNORE_FILE_TEST);
+    centralStorage = new CentralStorage(IGNORE_FILE_TEST, GRAPH_FILE_TEST, SQLITE_FILE_TEST);
   }
 
   @After
@@ -57,6 +59,7 @@ public class CentralStorageTest {
     LOG.info("delete files");
     Files.deleteIfExists(graphPath);
     Files.deleteIfExists(ignorePath);
+    Files.deleteIfExists(sqlitePath);
   }
 
   @Test

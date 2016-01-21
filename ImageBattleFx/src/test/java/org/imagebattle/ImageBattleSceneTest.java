@@ -4,25 +4,19 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
 import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Set;
-
-import org.junit.After;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.testfx.framework.junit.ApplicationTest;
 
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.scene.Node;
 import javafx.scene.input.MouseButton;
 import javafx.stage.Stage;
+import org.junit.Assume;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+import org.testfx.framework.junit.ApplicationTest;
 
 /**
  * Test for {@link ImageBattleScene}.
@@ -34,23 +28,10 @@ public class ImageBattleSceneTest extends ApplicationTest {
   @Rule
   public TemporaryFolder tf = new TemporaryFolder();
 
+  @Rule
+  public CentralStorageRule storageRule = new CentralStorageRule();
+
   private final BooleanProperty switched = new SimpleBooleanProperty(false);
-
-  Path ignorePath = Paths.get(System.getProperty("user.home"), CentralStorageTest.IGNORE_FILE_TEST);
-  Path graphPath = Paths.get(System.getProperty("user.home"), CentralStorageTest.GRAPH_FILE_TEST);
-  CentralStorage centralStorage;
-
-  @Before
-  public void setUp() throws Exception {
-    centralStorage = new CentralStorage(CentralStorageTest.GRAPH_FILE_TEST,
-        CentralStorageTest.IGNORE_FILE_TEST);
-  }
-
-  @After
-  public void tearDown() throws Exception {
-    Files.deleteIfExists(graphPath);
-    Files.deleteIfExists(ignorePath);
-  }
 
   @Override
   public void start(Stage stage) throws Exception {
@@ -61,8 +42,7 @@ public class ImageBattleSceneTest extends ApplicationTest {
     // File fileB = tf.newFile("fileB.jpg");
     // JPEGCreator.generateToFile(fileB);
 
-    CentralStorage centralStorage = new CentralStorage(CentralStorageTest.GRAPH_FILE_TEST,
-        CentralStorageTest.IGNORE_FILE_TEST);
+    CentralStorage centralStorage = storageRule.centralStorage();
     Boolean recursive = false;
     File folderDir = new File("src/test/resources");
     Assume.assumeTrue(folderDir.exists());

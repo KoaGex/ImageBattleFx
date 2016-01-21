@@ -23,6 +23,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import javafx.embed.swing.SwingFXUtils;
+import javafx.util.Pair;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
@@ -31,7 +33,6 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JViewport;
 import javax.swing.ScrollPaneConstants;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.encog.engine.network.activation.ActivationFunction;
@@ -52,9 +53,6 @@ import org.encog.platformspecific.j2se.data.image.ImageMLData;
 import org.encog.platformspecific.j2se.data.image.ImageMLDataSet;
 import org.encog.util.downsample.RGBDownsample;
 import org.encog.util.simple.EncogUtility;
-
-import javafx.embed.swing.SwingFXUtils;
-import javafx.util.Pair;
 
 /**
  * For testing encog.
@@ -172,7 +170,7 @@ public class ImageMachineLearning {
 
   private static Set<ResultListEntry> loadMostFightCountImages(long maxImageCount) {
     CentralStorage centralStorage = new CentralStorage(CentralStorage.GRAPH_FILE,
-        CentralStorage.IGNORE_FILE);
+        CentralStorage.IGNORE_FILE, CentralStorage.SQLITE_FILE);
     TransitiveDiGraph imageGraph = centralStorage.readGraph(new File("D:\\"),
         ImageBattleApplication.imagePredicate, true);
 

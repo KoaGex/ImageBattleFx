@@ -6,13 +6,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import javafx.util.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.imagebattle.CentralStorage;
 import org.imagebattle.ImageBattleApplication;
 import org.imagebattle.ImageBattleFolder;
-
-import javafx.util.Pair;
 
 /**
  * @author KoaGex
@@ -29,7 +28,7 @@ public class CandidateChooserSimulation {
 
     boolean recursive = false;
     CentralStorage centralStorage = new CentralStorage(CentralStorage.GRAPH_FILE,
-        CentralStorage.IGNORE_FILE);
+        CentralStorage.IGNORE_FILE, CentralStorage.SQLITE_FILE);
     ImageBattleFolder folder = new ImageBattleFolder(centralStorage, funPicsDir,
         ImageBattleApplication.imagePredicate, recursive);
 

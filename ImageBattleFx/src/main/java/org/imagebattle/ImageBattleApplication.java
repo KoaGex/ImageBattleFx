@@ -11,9 +11,6 @@ import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.collections.ObservableMap;
@@ -28,6 +25,8 @@ import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class ImageBattleApplication extends Application {
 
@@ -152,7 +151,7 @@ public class ImageBattleApplication extends Application {
 
     // gather images
     CentralStorage centralStorage = new CentralStorage(CentralStorage.GRAPH_FILE,
-        CentralStorage.IGNORE_FILE);
+        CentralStorage.IGNORE_FILE, CentralStorage.SQLITE_FILE);
     imageBattleFolder = new ImageBattleFolder(centralStorage, dir, fileRegex, recursive);
 
     ratingScene = ratingSceneCreator.apply(imageBattleFolder, this::showResultsScene);

@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -46,14 +47,24 @@ public class CentralStorage {
 
   public static final String GRAPH_FILE = "mediaBattleGraph.csv";
   public static final String IGNORE_FILE = "mediaBattleIgnore.csv";
+  public static final String SQLITE_FILE = "mediaBattleDatabase.sqlite";
 
   private final File graphFile;
 
   private final File ignoreFile;
 
-  public CentralStorage(String graphFileName, String ignoreFileName) {
+  private final Database database;
+
+  /**
+   * Constructor
+   * 
+   * @param graphFileName
+   * @param ignoreFileName
+   */
+  public CentralStorage(String graphFileName, String ignoreFileName, String sqliteFileName) {
     graphFile = getFile(graphFileName);
     ignoreFile = getFile(ignoreFileName);
+    database = new Database(new SqliteDatabase(getFile(sqliteFileName)));
   }
 
   TransitiveDiGraph readGraph(File chosenDirectory, Predicate<? super File> matchesFileRegex,
@@ -164,7 +175,26 @@ public class CentralStorage {
 
   Set<File> readIgnoreFile() {
     Set<String> readFile = readFile(ignoreFile);
-    return readFile.stream().map(File::new).collect(Collectors.toSet());
+    Set<File> queryIgnored = database.queryIgnored();
+
+    log.debug("files in file: {}    files in db: {}", readFile.size(), queryIgnored.size());
+    Set<File> result = readFile.stream()//
+        .map(File::new)//
+        .collect(Collectors.toSet());
+
+    // migration
+    Map<Boolean, List<File>> ignoredFilesThatAreNotInDb = result.stream()//
+        .filter(file -> !queryIgnored.contains(file))//
+        .filter(File::exists)//
+        // .limit(20)// dont migrate everything at once
+        .collect(Collectors.partitioningBy(ImageBattleApplication.imagePredicate));
+
+    List<File> images = ignoredFilesThatAreNotInDb.get(Boolean.TRUE);
+    List<File> music = ignoredFilesThatAreNotInDb.get(Boolean.FALSE);
+    images.forEach(image -> database.addToIgnore(image, MediaType.IMAGE));
+    music.forEach(song -> database.addToIgnore(song, MediaType.MUSIC));
+
+    return result;
   }
 
   /**
@@ -206,13 +236,15 @@ public class CentralStorage {
   /**
    * TODO To remove files from the ignore list a new method will be added.
    * 
-   * @param ignoredFiles
+   * @param ignoredFile
    *          Each of the given files should be ignored in all coming media battles.
    */
   void addToIgnored(File ignoredFile) {
     Set<String> ignoredFiles = readFile(ignoreFile);
 
-    ignoredFiles.add(ignoredFile.getAbsolutePath());
+    String absolutePath = ignoredFile.getAbsolutePath();
+    database.addToIgnore(ignoredFile, MediaType.IMAGE); // FIXME add parameter for media type
+    ignoredFiles.add(absolutePath);
 
     String newIgnoredFiles = ignoredFiles.stream()//
         .sorted()//
@@ -235,6 +267,8 @@ public class CentralStorage {
 
     log.debug("file {} was removed: {}", file, wasRemoved);
     writeStringIntoFile(newIgnoredFiles, ignoreFile);
+
+    database.removeFromIgnore(file, MediaType.IMAGE); // FIXME add parameter for media type
   }
 
   static File getFile(String fileName) {

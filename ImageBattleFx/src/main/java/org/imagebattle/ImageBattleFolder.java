@@ -14,6 +14,8 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import javafx.beans.property.ReadOnlyBooleanProperty;
+import javafx.util.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.imagebattle.chooser.ACandidateChooser;
@@ -27,12 +29,20 @@ import org.imagebattle.chooser.RankingTopDownCandidateChooser;
 import org.imagebattle.chooser.SameWinLoseRationCandidateChooser;
 import org.imagebattle.chooser.WinnerOrientedCandidateChooser;
 
-import javafx.beans.property.ReadOnlyBooleanProperty;
-import javafx.util.Pair;
-
 /**
  * Represents one folder the user has chosen. Files that are direct or indirect children of this
  * directory take part in the battle.
+ * 
+ * <p>
+ * Workflow :
+ * <ol>
+ * <li>read data from database</li>
+ * <li>scan directory for files</li>
+ * <li>delete files that have disappeared</li>
+ * <li>add new files</li>
+ * <li>battle!
+ * </ol>
+ * </p>
  * 
  * @author Besitzer
  *

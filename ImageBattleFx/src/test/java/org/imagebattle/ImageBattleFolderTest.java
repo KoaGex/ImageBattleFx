@@ -30,8 +30,8 @@ public class ImageBattleFolderTest {
 
   @Before
   public void setUp() throws Exception {
-    centralStorage = new CentralStorage(CentralStorageTest.GRAPH_FILE_TEST,
-        CentralStorageTest.IGNORE_FILE_TEST);
+    CentralStorage centralStorage = new CentralStorage(CentralStorage.GRAPH_FILE,
+        CentralStorage.IGNORE_FILE, CentralStorage.SQLITE_FILE);
   }
 
   @After
