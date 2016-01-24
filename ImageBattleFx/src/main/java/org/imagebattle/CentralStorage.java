@@ -1,21 +1,14 @@
 package org.imagebattle;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.DigestInputStream;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -170,6 +163,7 @@ public class CentralStorage {
         .filter(acceptFile)//
         .collect(Collectors.toSet());
     log.debug("count of ignored files: {}", result.size());
+
     return result;
   }
 
@@ -323,30 +317,4 @@ public class CentralStorage {
     return inconsistencies;
   }
 
-  public static String fileContentHash(File file) {
-    try {
-      MessageDigest md = MessageDigest.getInstance("SHA-256");
-      FileInputStream fis = new FileInputStream(file);
-      java.security.DigestInputStream dis = new DigestInputStream(fis, md);
-      BufferedReader br = new BufferedReader(new InputStreamReader(dis));
-      br.lines().count();
-
-      byte[] digest = md.digest();
-      StringBuilder sb1 = new StringBuilder();
-      StringBuilder sb2 = new StringBuilder();
-      for (byte b : digest) {
-        String hexString1 = Integer.toHexString(b);
-        sb1.append(hexString1);
-        String hexString2 = Integer.toHexString(0xff & b);
-        sb2.append(hexString2);
-      }
-      return sb2.toString();
-
-    } catch (NoSuchAlgorithmException e) {
-      throw new RuntimeException(e);
-    } catch (FileNotFoundException e) {
-      throw new RuntimeException(e);
-    }
-
-  }
 }
