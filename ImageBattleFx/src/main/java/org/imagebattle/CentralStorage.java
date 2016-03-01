@@ -136,7 +136,7 @@ public class CentralStorage {
     String graphCsvContent = Stream.concat(oldFileContent.stream(), edgesOfCurrentGraphStream)//
         .distinct()//
         .sorted()//
-        .collect(Collectors.joining(System.lineSeparator()));
+        .collect(Collectors.joining(System.lineSeparator())); // FIXME heap space
 
     log.debug("file lines before save: {}    current edge count: {} ", oldFileContent.size(),
         graph.edgeSet().size());
