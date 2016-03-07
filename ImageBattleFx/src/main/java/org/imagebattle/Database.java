@@ -21,7 +21,7 @@ import javax.sql.DataSource;
  * @author KoaGex
  *
  */
-public class Database {
+class Database {
 
   private static final String IGNORED = "ignored";
   private static final String FILES = "files";
@@ -36,7 +36,7 @@ public class Database {
    *          {@link SqliteDatabase}. Should the parameter type be changed to that class or keep
    *          using the interface?
    */
-  public Database(DataSource dataSource) {
+  Database(DataSource dataSource) {
     this.dataSource = dataSource;
 
     Collection<String> tables = tables();
@@ -57,7 +57,7 @@ public class Database {
    * @param mediaType
    * @param mediaObject
    */
-  public void addToIgnore(File file, MediaType mediaType) {
+  void addToIgnore(File file, MediaType mediaType) {
 
     Optional<Integer> lookupIdByFile = lookupFile(file);
 
@@ -87,7 +87,7 @@ public class Database {
    * @param file
    * @param mediaType
    */
-  public void removeFromIgnore(File file, MediaType mediaType) {
+  void removeFromIgnore(File file, MediaType mediaType) {
     /*
      * what should be the parameter? when program starts it should register all current files in the
      * database. => id should exist. However dealing with ids is not helpful to the application.
@@ -123,7 +123,7 @@ public class Database {
   /**
    * @return Set containing all existing files that are ignored.
    */
-  public Set<File> queryIgnored() {
+  Set<File> queryIgnored() {
 
     String query = "select files.absolute_path from " + FILES + " join  " + MEDIA_OBJECTS + " on "
         + MEDIA_OBJECTS + ".id =" + FILES + ".media_object join " + IGNORED + " on " + IGNORED
@@ -143,7 +143,7 @@ public class Database {
   /**
    * @return Names of all tables in the sqlite database.
    */
-  public Collection<String> tables() {
+  Collection<String> tables() {
     String queryAllTableNames = "SELECT name FROM sqlite_master WHERE type='table'";
     RowMapper<String> rowMapper = resultSet -> resultSet.getString(1);
     return query(queryAllTableNames, rowMapper);
@@ -190,7 +190,7 @@ public class Database {
    * @param mediaType
    *          Currently String is allowed. This may later become an enum.
    */
-  public void addMediaObject(String hash, MediaType mediaType) {
+  void addMediaObject(String hash, MediaType mediaType) {
     String insert = " insert into " + MEDIA_OBJECTS + "(hash,media_type) values ('" + hash + "','"
         + mediaType.name() + "')";
     executeSql(insert);
@@ -200,7 +200,7 @@ public class Database {
    * @param mediaObjectId
    * @param file
    */
-  public void addFile(int mediaObjectId, File file) {
+  void addFile(int mediaObjectId, File file) {
 
     // TODO preparedStatement? test performance
     String insert = "insert into " + FILES + " (media_object, absolute_path) values ("
@@ -213,7 +213,7 @@ public class Database {
    * @param file
    * @return
    */
-  public Optional<Integer> lookupFile(File file) {
+  Optional<Integer> lookupFile(File file) {
 
     String query = "select media_object from " + FILES + " where absolute_path = '"
         + file.getAbsolutePath() + "'";
@@ -224,7 +224,7 @@ public class Database {
 
   }
 
-  public Optional<Integer> lookupMediaItemId(String hash) {
+  Optional<Integer> lookupMediaItemId(String hash) {
     String query = "select id from " + MEDIA_OBJECTS + " where hash = '" + hash + "'";
     List<Integer> ids = query(query, rs -> rs.getInt(1));
     return ids.stream().findAny();
@@ -233,7 +233,7 @@ public class Database {
   /**
    * @return Zero or more {@link MediaObject} that match the given criteria.
    */
-  public Collection<MediaObject> queryMediaObjects() {
+  Collection<MediaObject> queryMediaObjects() {
     String query = "select * from " + MEDIA_OBJECTS;
 
     RowMapper<MediaObject> mediaObjectMapper = resultSet -> {
