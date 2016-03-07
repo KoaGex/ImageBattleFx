@@ -5,12 +5,14 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
@@ -136,6 +138,34 @@ class Database {
     return filesPaths.stream()//
         .map(File::new)//
         .filter(File::exists)//
+        .collect(Collectors.toSet());
+  }
+
+  Set<File> queryIgnored(File chosenDirectory, MediaType mediaType, Boolean recursive) {
+    String query = "select files.absolute_path from " + FILES + //
+        " join  " + MEDIA_OBJECTS + //
+        " on " + MEDIA_OBJECTS + ".id =" + FILES + ".media_object " + //
+        " join " + IGNORED + //
+        " on " + IGNORED + ".media_object = " + MEDIA_OBJECTS + ".id" + //
+        " where " + MEDIA_OBJECTS + ".media_type = '" + mediaType.name() + "'";
+
+    RowMapper<String> rowMapper = resultSet -> resultSet.getString(1);
+    List<String> filesPaths = query(query, rowMapper);
+
+    // block copied from CentralStorage
+    Predicate<File> containedRecursively = file -> {
+      return file.getAbsolutePath().startsWith(chosenDirectory.getAbsolutePath());
+    };
+    Predicate<File> containedDirectly = file -> {
+      List<File> directorFiles = Arrays.asList(chosenDirectory.listFiles());
+      return directorFiles.contains(file);
+    };
+    Predicate<File> matchesChosenDirectory = recursive ? containedRecursively : containedDirectly;
+
+    return filesPaths.stream()//
+        .map(File::new)//
+        .filter(File::exists)//
+        .filter(matchesChosenDirectory)//
         .collect(Collectors.toSet());
 
   }

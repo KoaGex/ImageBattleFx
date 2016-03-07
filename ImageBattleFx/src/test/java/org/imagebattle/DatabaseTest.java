@@ -134,4 +134,29 @@ public class DatabaseTest {
 
   }
 
+  @Test
+  public void queryIgnoredCorrectMediaType() throws IOException {
+    File file = tf.newFile();
+    File root = tf.getRoot();
+    file.createNewFile();
+    database.addToIgnore(file, MediaType.IMAGE);
+
+    Set<File> ignored = database.queryIgnored(root, MediaType.IMAGE, true);
+
+    assertThat(ignored, hasItem(file));
+
+  }
+
+  @Test
+  public void queryIgnoredWrongMediaType() throws IOException {
+    File file = tf.newFile();
+    File root = tf.getRoot();
+    file.createNewFile();
+    database.addToIgnore(file, MediaType.MUSIC);
+
+    Set<File> ignored = database.queryIgnored(root, MediaType.IMAGE, true);
+
+    assertThat(ignored, not(hasItem(file)));
+  }
+
 }
