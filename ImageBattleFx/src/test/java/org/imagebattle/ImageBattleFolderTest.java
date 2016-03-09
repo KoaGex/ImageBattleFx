@@ -26,8 +26,8 @@ public class ImageBattleFolderTest {
   public void constructorEdge() throws IOException {
     // prepare
     TransitiveDiGraph graph = new TransitiveDiGraph();
-    File fileWinner = temporaryFolder.newFile();
-    File fileLoser = temporaryFolder.newFile();
+    File fileWinner = temporaryFolder.newFile("win.jpg");
+    File fileLoser = temporaryFolder.newFile("lose.jpg");
     graph.addVertex(fileWinner);
     graph.addVertex(fileLoser);
     graph.addEdge(fileWinner, fileLoser);
@@ -37,7 +37,8 @@ public class ImageBattleFolderTest {
     File root = temporaryFolder.getRoot();
     Boolean recursive = true;
     // act
-    ImageBattleFolder folder = new ImageBattleFolder(centralStorage, root, file -> true, recursive);
+    ImageBattleFolder folder = new ImageBattleFolder(centralStorage, root, MediaType.IMAGE,
+        recursive);
 
     // assert
     List<ResultListEntry> resultList = folder.getResultList();
@@ -52,13 +53,14 @@ public class ImageBattleFolderTest {
     // prepare
     CentralStorage centralStorage = centralStorageRule.centralStorage();
 
-    File fileIgnored = temporaryFolder.newFile();
+    File fileIgnored = temporaryFolder.newFile("ignore.jpg");
     centralStorage.addToIgnored(fileIgnored);
 
     File root = temporaryFolder.getRoot();
     Boolean recursive = true;
     // act
-    ImageBattleFolder folder = new ImageBattleFolder(centralStorage, root, file -> true, recursive);
+    ImageBattleFolder folder = new ImageBattleFolder(centralStorage, root, MediaType.IMAGE,
+        recursive);
 
     // assert
     List<ResultListEntry> resultList = folder.getResultList();
@@ -73,11 +75,12 @@ public class ImageBattleFolderTest {
     // prepare
     // new ImageBattleFolder(chosenDirectory, fileRegex, recursive)
     File root = temporaryFolder.getRoot();
-    File fileWinner = temporaryFolder.newFile();
-    File fileLoser = temporaryFolder.newFile();
+    File fileWinner = temporaryFolder.newFile("win.jpg");
+    File fileLoser = temporaryFolder.newFile("lose.jpg");
     Boolean recursive = false;
     CentralStorage centralStorage = centralStorageRule.centralStorage();
-    ImageBattleFolder folder = new ImageBattleFolder(centralStorage, root, file -> true, recursive);
+    ImageBattleFolder folder = new ImageBattleFolder(centralStorage, root, MediaType.IMAGE,
+        recursive);
 
     // act
     folder.makeDecision(fileWinner, fileLoser);
@@ -97,9 +100,9 @@ public class ImageBattleFolderTest {
   @Test
   public void fixInconsistenceByDecision() throws IOException {
     // prepare
-    File fileWinner = temporaryFolder.newFile();
-    File fileLoser = temporaryFolder.newFile();
-    File fileInconsistend = temporaryFolder.newFile();
+    File fileWinner = temporaryFolder.newFile("win.jpg");
+    File fileLoser = temporaryFolder.newFile("lose.jpg");
+    File fileInconsistend = temporaryFolder.newFile("inconsistent.jpg");
     TransitiveDiGraph graph = new TransitiveDiGraph();
     graph.addVertex(fileWinner);
     graph.addVertex(fileLoser);
@@ -111,7 +114,8 @@ public class ImageBattleFolderTest {
 
     File root = temporaryFolder.getRoot();
     Boolean recursive = true;
-    ImageBattleFolder folder = new ImageBattleFolder(centralStorage, root, file -> true, recursive);
+    ImageBattleFolder folder = new ImageBattleFolder(centralStorage, root, MediaType.IMAGE,
+        recursive);
 
     // act
     folder.makeDecision(fileWinner, fileInconsistend);
@@ -129,7 +133,8 @@ public class ImageBattleFolderTest {
     File file = temporaryFolder.newFile();
     Boolean recursive = false;
     CentralStorage centralStorage = centralStorageRule.centralStorage();
-    ImageBattleFolder folder = new ImageBattleFolder(centralStorage, root, f -> true, recursive);
+    ImageBattleFolder folder = new ImageBattleFolder(centralStorage, root, MediaType.IMAGE,
+        recursive);
 
     // act
     folder.ignoreFile(file);
@@ -161,7 +166,8 @@ public class ImageBattleFolderTest {
     centralStorage.addToIgnored(fileInconsistend);
     File root = temporaryFolder.getRoot();
     Boolean recursive = true;
-    ImageBattleFolder folder = new ImageBattleFolder(centralStorage, root, file -> true, recursive);
+    ImageBattleFolder folder = new ImageBattleFolder(centralStorage, root, MediaType.IMAGE,
+        recursive);
 
     // act
     folder.ignoreFile(fileInconsistend);

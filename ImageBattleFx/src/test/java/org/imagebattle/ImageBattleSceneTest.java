@@ -46,9 +46,9 @@ public class ImageBattleSceneTest extends ApplicationTest {
     Boolean recursive = false;
     File folderDir = new File("src/test/resources");
     Assume.assumeTrue(folderDir.exists());
-    ImageBattleScene battleScene = ImageBattleScene
-        .createBattleScene(new ImageBattleFolder(centralStorage, folderDir,
-            ImageBattleApplication.imagePredicate, recursive), switchSceneAction);
+    ImageBattleScene battleScene = ImageBattleScene.createBattleScene(
+        new ImageBattleFolder(centralStorage, folderDir, MediaType.IMAGE, recursive),
+        switchSceneAction);
 
     stage.setScene(battleScene);
     stage.setWidth(1800);

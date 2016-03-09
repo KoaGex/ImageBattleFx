@@ -32,7 +32,7 @@ public class ImageResultsSceneTest extends ApplicationTest {
         CentralStorage.IGNORE_FILE, CentralStorage.SQLITE_FILE);
     Boolean recursive = false;
     ImageBattleFolder imageBattleFolder = new ImageBattleFolder(centralStorage, folderDir,
-        ImageBattleApplication.imagePredicate, recursive);
+        MediaType.IMAGE, recursive);
     File[] testImages = folderDir.listFiles();
 
     // chain of wins: 1 > 2 > 3 > 4 ...

@@ -89,12 +89,12 @@ public class ImageBattleApplication extends Application {
 
     musicButton.setOnAction(event -> {
       log.info("battle type: music");
-      showDirectoryChooser(musicPredicate, MusicBattleScene::createBattleScene,
+      showDirectoryChooser(MediaType.MUSIC, MusicBattleScene::createBattleScene,
           MusicRankingScene::createRankingScene);
     });
     imagesButton.setOnAction(event -> {
       log.info("battle type: images");
-      showDirectoryChooser(imagePredicate, ImageBattleScene::createBattleScene,
+      showDirectoryChooser(MediaType.IMAGE, ImageBattleScene::createBattleScene,
           RankingScene::createRankingScene);
     });
 
@@ -117,13 +117,18 @@ public class ImageBattleApplication extends Application {
     log.debug("showing battle kind chooser");
   }
 
-  private void showDirectoryChooser(Predicate<File> fileRegex,
-      BiFunction<ImageBattleFolder, Runnable, Scene> ratingSceneCreator,
-      BiFunction<ImageBattleFolder, Runnable, Scene> rankingSceneCreator) {
+  private void showDirectoryChooser(MediaType mediaType,
+      BiFunction<ImageBattleFolder, Runnable, Scene> ratingSceneCreator, //
+      BiFunction<ImageBattleFolder, Runnable, Scene> rankingSceneCreator //
+  ) {
 
-    BiConsumer<File, Boolean> confirmAction = (file, recursive) -> startBattle(file,
-        ratingSceneCreator, fileRegex, rankingSceneCreator, recursive);
-    DirectoryChooserScene directoryChooserScene = DirectoryChooserScene.create(fileRegex,
+    BiConsumer<File, Boolean> confirmAction = (file, recursive) -> startBattle(file, //
+        ratingSceneCreator, //
+        mediaType, //
+        rankingSceneCreator, //
+        recursive//
+    );
+    DirectoryChooserScene directoryChooserScene = DirectoryChooserScene.create(mediaType::matches,
         confirmAction);
 
     directoryChooserScene.getStylesheets().add(CSS_FILE);
@@ -137,8 +142,11 @@ public class ImageBattleApplication extends Application {
   }
 
   private void startBattle(File dir,
-      BiFunction<ImageBattleFolder, Runnable, Scene> ratingSceneCreator, Predicate<File> fileRegex,
-      BiFunction<ImageBattleFolder, Runnable, Scene> rankingSceneCreator, Boolean recursive) {
+      BiFunction<ImageBattleFolder, Runnable, Scene> ratingSceneCreator, //
+      MediaType mediaType, //
+      BiFunction<ImageBattleFolder, Runnable, Scene> rankingSceneCreator, //
+      Boolean recursive//
+  ) {
 
     if (dir == null) {
       System.exit(1);
@@ -152,7 +160,7 @@ public class ImageBattleApplication extends Application {
     // gather images
     CentralStorage centralStorage = new CentralStorage(CentralStorage.GRAPH_FILE,
         CentralStorage.IGNORE_FILE, CentralStorage.SQLITE_FILE);
-    imageBattleFolder = new ImageBattleFolder(centralStorage, dir, fileRegex, recursive);
+    imageBattleFolder = new ImageBattleFolder(centralStorage, dir, mediaType, recursive);
 
     ratingScene = ratingSceneCreator.apply(imageBattleFolder, this::showResultsScene);
 

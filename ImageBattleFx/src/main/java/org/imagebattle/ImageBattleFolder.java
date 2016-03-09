@@ -63,6 +63,8 @@ public class ImageBattleFolder {
 
   private final CentralStorage centralStorage;
 
+  private final MediaType mediaType;
+
   /**
    * @param centralStorage
    *          TODO
@@ -70,9 +72,15 @@ public class ImageBattleFolder {
    * @param fileRegex
    * @param recursive
    */
-  public ImageBattleFolder(CentralStorage centralStorage, File chosenDirectory,
-      Predicate<File> fileRegex, Boolean recursive) {
+  public ImageBattleFolder(//
+      CentralStorage centralStorage, //
+      File chosenDirectory, //
+      MediaType mediaType, //
+      Boolean recursive//
+  ) {
     this.centralStorage = centralStorage;
+    this.mediaType = mediaType;
+    Predicate<File> fileRegex = mediaType::matches;
 
     graph = new TransitiveDiGraph();
 
@@ -165,6 +173,9 @@ public class ImageBattleFolder {
 
   }
 
+  /**
+   * @return
+   */
   public List<ResultListEntry> getResultList() {
 
     // Comparator<File> winnerFirstComparator =
