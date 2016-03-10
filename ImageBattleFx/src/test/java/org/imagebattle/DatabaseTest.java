@@ -92,7 +92,7 @@ public class DatabaseTest {
   @Test
   public void addFile() throws IOException {
 
-    File file = tf.newFile();
+    File file = tf.newFile("a.jpg");
     Files.write("hello", file, Charset.forName("UTF-8"));
     String hash = "fhaildfaADLSD12dLJASd";
     database.addMediaObject(hash, MediaType.IMAGE);
@@ -107,9 +107,9 @@ public class DatabaseTest {
 
   @Test
   public void addToIgnore() throws IOException {
-    File file = tf.newFile();
+    File file = tf.newFile("a.jpg");
     file.createNewFile();
-    database.addToIgnore(file, MediaType.IMAGE);
+    database.addToIgnore(file);
 
     Set<File> ignored = database.queryIgnored();
 
@@ -119,13 +119,13 @@ public class DatabaseTest {
 
   @Test
   public void removeFromIgnore() throws IOException {
-    File file = tf.newFile();
+    File file = tf.newFile("a.jpg");
     Files.write("hello", file, Charset.forName("UTF-8"));
-    database.addToIgnore(file, MediaType.IMAGE);
+    database.addToIgnore(file);
     final Set<File> ignoredBefore = database.queryIgnored();
 
     // act
-    database.removeFromIgnore(file, MediaType.IMAGE);
+    database.removeFromIgnore(file);
 
     // assert
     Set<File> ignoredAfter = database.queryIgnored();
@@ -136,10 +136,10 @@ public class DatabaseTest {
 
   @Test
   public void queryIgnoredCorrectMediaType() throws IOException {
-    File file = tf.newFile();
+    File file = tf.newFile("a.jpg");
     File root = tf.getRoot();
     file.createNewFile();
-    database.addToIgnore(file, MediaType.IMAGE);
+    database.addToIgnore(file);
 
     Set<File> ignored = database.queryIgnored(root, MediaType.IMAGE, true);
 
@@ -149,10 +149,10 @@ public class DatabaseTest {
 
   @Test
   public void queryIgnoredWrongMediaType() throws IOException {
-    File file = tf.newFile();
+    File file = tf.newFile("a.mp3");
     File root = tf.getRoot();
     file.createNewFile();
-    database.addToIgnore(file, MediaType.MUSIC);
+    database.addToIgnore(file);
 
     Set<File> ignored = database.queryIgnored(root, MediaType.IMAGE, true);
 

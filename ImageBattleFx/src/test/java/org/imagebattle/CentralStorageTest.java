@@ -151,7 +151,7 @@ public class CentralStorageTest {
   @Test
   public void addToIgnore() throws IOException {
     // prepare
-    File file = tf.newFile();
+    File file = tf.newFile("a.jpg");
     CentralStorage centralStorage = centralStorageRule.centralStorage();
 
     // act
@@ -168,8 +168,8 @@ public class CentralStorageTest {
   public void removeFromIgnore() throws IOException {
 
     // prepare
-    File file = tf.newFile();
-    File file2 = tf.newFile();
+    File file = tf.newFile("1.jpg");
+    File file2 = tf.newFile("2.jpg");
     CentralStorage centralStorage = centralStorageRule.centralStorage();
     centralStorage.addToIgnored(file);
     centralStorage.addToIgnored(file2);

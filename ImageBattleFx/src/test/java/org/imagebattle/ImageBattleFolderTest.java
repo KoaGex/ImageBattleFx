@@ -130,7 +130,7 @@ public class ImageBattleFolderTest {
   public void testIgnoreFile() throws IOException {
     // prepare
     File root = temporaryFolder.getRoot();
-    File file = temporaryFolder.newFile();
+    File file = temporaryFolder.newFile("a.jpg");
     Boolean recursive = false;
     CentralStorage centralStorage = centralStorageRule.centralStorage();
     ImageBattleFolder folder = new ImageBattleFolder(centralStorage, root, MediaType.IMAGE,
@@ -153,9 +153,9 @@ public class ImageBattleFolderTest {
   @Test
   public void fixInconsistencyByIgnore() throws IOException {
     // prepare
-    File fileWinner = temporaryFolder.newFile();
-    File fileLoser = temporaryFolder.newFile();
-    File fileInconsistend = temporaryFolder.newFile();
+    File fileWinner = temporaryFolder.newFile("win.jpg");
+    File fileLoser = temporaryFolder.newFile("lose.jpg");
+    File fileInconsistend = temporaryFolder.newFile("inconsistent.jpg");
     TransitiveDiGraph graph = new TransitiveDiGraph();
     graph.addVertex(fileWinner);
     graph.addVertex(fileLoser);

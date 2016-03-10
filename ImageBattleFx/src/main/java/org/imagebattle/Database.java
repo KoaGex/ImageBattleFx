@@ -56,10 +56,9 @@ class Database {
   }
 
   /**
-   * @param mediaType
    * @param mediaObject
    */
-  void addToIgnore(File file, MediaType mediaType) {
+  void addToIgnore(File file) {
 
     Optional<Integer> lookupIdByFile = lookupFile(file);
 
@@ -74,7 +73,7 @@ class Database {
       if (lookupMediaItemId.isPresent()) {
         id = lookupMediaItemId.get();
       } else {
-        addMediaObject(hash, mediaType);
+        addMediaObject(hash, detectMediaType(file));
         id = lookupMediaItemId(hash).orElseThrow(RuntimeException::new);
       }
 
@@ -87,9 +86,8 @@ class Database {
 
   /**
    * @param file
-   * @param mediaType
    */
-  void removeFromIgnore(File file, MediaType mediaType) {
+  void removeFromIgnore(File file) {
     /*
      * what should be the parameter? when program starts it should register all current files in the
      * database. => id should exist. However dealing with ids is not helpful to the application.
@@ -112,7 +110,7 @@ class Database {
       if (lookupMediaItemId.isPresent()) {
         id = lookupMediaItemId.get();
       } else {
-        addMediaObject(hash, mediaType);
+        addMediaObject(hash, detectMediaType(file));
         id = lookupMediaItemId(hash).orElseThrow(RuntimeException::new);
       }
 
@@ -310,6 +308,14 @@ class Database {
       throw new RuntimeException(e);
     }
     return result;
+  }
+
+  private MediaType detectMediaType(File file) {
+    // TODO im not 100% happy with this. Create a class MediaFile that detects type while creating?
+    return Arrays.stream(MediaType.values()).filter(type -> type.matches(file))//
+        .findAny()//
+        .orElseThrow(() -> new IllegalStateException("File type of " + file.getAbsolutePath()
+            + " could not be detected. It should probably not be in the media battle."));
   }
 
 }

@@ -185,8 +185,8 @@ public class CentralStorage {
 
     List<File> images = ignoredFilesThatAreNotInDb.get(Boolean.TRUE);
     List<File> music = ignoredFilesThatAreNotInDb.get(Boolean.FALSE);
-    images.forEach(image -> database.addToIgnore(image, MediaType.IMAGE));
-    music.forEach(song -> database.addToIgnore(song, MediaType.MUSIC));
+    images.forEach(image -> database.addToIgnore(image));
+    music.forEach(song -> database.addToIgnore(song));
 
     return result;
   }
@@ -237,7 +237,7 @@ public class CentralStorage {
     Set<String> ignoredFiles = readFile(ignoreFile);
 
     String absolutePath = ignoredFile.getAbsolutePath();
-    database.addToIgnore(ignoredFile, MediaType.IMAGE); // FIXME add parameter for media type
+    database.addToIgnore(ignoredFile);
     ignoredFiles.add(absolutePath);
 
     String newIgnoredFiles = ignoredFiles.stream()//
@@ -262,7 +262,7 @@ public class CentralStorage {
     log.debug("file {} was removed: {}", file, wasRemoved);
     writeStringIntoFile(newIgnoredFiles, ignoreFile);
 
-    database.removeFromIgnore(file, MediaType.IMAGE); // FIXME add parameter for media type
+    database.removeFromIgnore(file);
   }
 
   static File getFile(String fileName) {
