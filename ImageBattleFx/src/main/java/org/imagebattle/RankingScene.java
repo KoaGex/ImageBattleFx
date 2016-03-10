@@ -2,7 +2,7 @@ package org.imagebattle;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -10,9 +10,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -33,6 +30,8 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.layout.StackPane;
 import javafx.scene.text.TextFlow;
 import javafx.stage.DirectoryChooser;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Complete scene with all content displaying the ranking order.
@@ -120,10 +119,10 @@ class RankingScene extends Scene {
     boolean smooth = true;
     boolean preserveRatio = true;
     Image image = imagesMap.computeIfAbsent(file, key -> {
-      try {
-        FileInputStream fis = new FileInputStream(key);
+      try (FileInputStream fis = new FileInputStream(key)) {
+
         return new Image(fis, 500d, 250d, preserveRatio, smooth);
-      } catch (FileNotFoundException e) {
+      } catch (IOException e) {
         e.printStackTrace();
         return null;
       }
