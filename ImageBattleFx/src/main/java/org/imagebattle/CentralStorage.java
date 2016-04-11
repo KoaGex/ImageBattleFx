@@ -144,27 +144,15 @@ public class CentralStorage {
     writeStringIntoFile(graphCsvContent, graphFile);
   }
 
-  Set<File> readIgnoreFile(File chosenDirectory, Predicate<File> fileRegex, Boolean recursive) {
-    Set<String> readFile = readFile(ignoreFile);
+  /**
+   * @param chosenDirectory
+   * @param fileRegex
+   * @param recursive
+   * @return
+   */
+  Set<File> readIgnoreFile(File chosenDirectory, MediaType mediaType, Boolean recursive) {
 
-    Predicate<File> containedRecursively = file -> {
-      return file.getAbsolutePath().startsWith(chosenDirectory.getAbsolutePath());
-    };
-    Predicate<File> containedDirectly = file -> {
-      List<File> directorFiles = Arrays.asList(chosenDirectory.listFiles());
-      return directorFiles.contains(file);
-    };
-
-    Predicate<File> matchesChosenDirectory = recursive ? containedRecursively : containedDirectly;
-
-    Predicate<File> acceptFile = matchesChosenDirectory.and(fileRegex);
-    Set<File> result = readFile.stream()//
-        .map(File::new)//
-        .filter(acceptFile)//
-        .collect(Collectors.toSet());
-    log.debug("count of ignored files: {}", result.size());
-
-    return result;
+    return database.queryIgnored(chosenDirectory, mediaType, recursive);
   }
 
   Set<File> readIgnoreFile() {
