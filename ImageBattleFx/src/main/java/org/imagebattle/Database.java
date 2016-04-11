@@ -15,6 +15,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import javafx.util.Pair;
 import javax.sql.DataSource;
 
 /**
@@ -28,6 +29,7 @@ class Database {
   private static final String IGNORED = "ignored";
   private static final String FILES = "files";
   private static final String MEDIA_OBJECTS = "media_objects";
+  private static final String EDGES = "edges";
   private final DataSource dataSource;
 
   /**
@@ -52,7 +54,53 @@ class Database {
     createIfMissing.accept(MEDIA_OBJECTS, this::createMediaObjectsTable);
     createIfMissing.accept(FILES, this::createFilesTable);
     createIfMissing.accept(IGNORED, this::createIgnoredTable);
+    createIfMissing.accept(EDGES, this::createEdgesTable);
 
+  }
+
+  void addEdge(File winner, File loser) {
+    int winnerId = mediaId(winner);
+    int loserId = mediaId(loser);
+
+    String insert = "insert into " + EDGES + " values (" + winnerId + "," + loserId + ")";
+    executeSql(insert);
+  }
+
+  TransitiveDiGraph queryEdges() {
+
+    String query = "select f_win.absolute_path, f_los.absolute_path " + //
+        " from " + EDGES + " e " + //
+        " join  " + MEDIA_OBJECTS + " m_win" + //
+        " on m_win.id = e.winner " + //
+        " join " + FILES + " f_win " + //
+        " on f_win.media_object = m_win.id " + //
+        " join  " + MEDIA_OBJECTS + " m_los" + //
+        " on m_los.id = e.loser " + //
+        " join " + FILES + " f_los " + //
+        " on f_los.media_object = m_los.id " //
+        ;
+
+    RowMapper<Pair<String, String>> rowMapper = resultSet -> new Pair(resultSet.getString(1),
+        resultSet.getString(2));
+    List<Pair<String, String>> filesPaths = query(query, rowMapper);
+    System.err.println(filesPaths.size());
+    System.err.println(filesPaths.get(0));
+
+    // return filesPaths.stream()//
+    // .map(File::new)//
+    // .filter(File::exists)//
+    // .collect(Collectors.toSet());
+
+    TransitiveDiGraph result = new TransitiveDiGraph();
+    for (Pair<String, String> pair : filesPaths) {
+      File winner = new File(pair.getKey());
+      File loser = new File(pair.getValue());
+      result.addVertex(winner);
+      result.addVertex(loser);
+      result.addEdge(winner, loser);
+    }
+
+    return result;
   }
 
   /**
@@ -60,6 +108,13 @@ class Database {
    */
   void addToIgnore(File file) {
 
+    int id = mediaId(file);
+
+    String insert = "insert into " + IGNORED + " values (" + id + ")";
+    executeSql(insert);
+  }
+
+  private int mediaId(File file) {
     Optional<Integer> lookupIdByFile = lookupFile(file);
 
     int id;
@@ -79,43 +134,14 @@ class Database {
 
       addFile(id, file);
     }
-
-    String insert = "insert into " + IGNORED + " values (" + id + ")";
-    executeSql(insert);
+    return id;
   }
 
   /**
    * @param file
    */
   void removeFromIgnore(File file) {
-    /*
-     * what should be the parameter? when program starts it should register all current files in the
-     * database. => id should exist. However dealing with ids is not helpful to the application.
-     * That is database internals and could be hidden.
-     *
-     * Idea: Class MediaObjectFile(id, file, mediaType) ?? extends file?
-     * 
-     *
-     */
-    Optional<Integer> lookupIdByFile = lookupFile(file);
-
-    int id;
-    if (lookupIdByFile.isPresent()) {
-      id = lookupIdByFile.get();
-    } else {
-
-      String hash = new FileContentHash(file).hash();
-      Optional<Integer> lookupMediaItemId = lookupMediaItemId(hash);
-
-      if (lookupMediaItemId.isPresent()) {
-        id = lookupMediaItemId.get();
-      } else {
-        addMediaObject(hash, detectMediaType(file));
-        id = lookupMediaItemId(hash).orElseThrow(RuntimeException::new);
-      }
-
-      addFile(id, file);
-    }
+    int id = mediaId(file);
     String delete = "delete from " + IGNORED + " where  media_object = " + id;
     executeSql(delete);
   }
@@ -205,6 +231,15 @@ class Database {
     String createTable = " create table " + IGNORED + "(" + //
         " media_object INTEGER NON NULL," + //
         " FOREIGN KEY(media_object) REFERENCES " + MEDIA_OBJECTS + "(id)  ) ";
+    executeSql(createTable);
+  }
+
+  private void createEdgesTable() {
+    String createTable = " create table " + EDGES + "(" + //
+        " winner INTEGER NON NULL," + //
+        " loser  INTEGER NON NULL," + //
+        " FOREIGN KEY(winner) REFERENCES " + MEDIA_OBJECTS + "(id) ,  " + //
+        " FOREIGN KEY(loser)  REFERENCES " + MEDIA_OBJECTS + "(id)  ) ";
     executeSql(createTable);
   }
 

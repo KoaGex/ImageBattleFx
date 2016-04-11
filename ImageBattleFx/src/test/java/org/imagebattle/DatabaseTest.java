@@ -159,4 +159,23 @@ public class DatabaseTest {
     assertThat(ignored, not(hasItem(file)));
   }
 
+  @Test
+  public void queryEdges() throws IOException {
+    // TODO what happens if winner and loser are the same file?
+    File winner = tf.newFile("a.mp3");
+    Files.write(new byte[] { 13 }, winner);
+    File loser = tf.newFile("b.mp3");
+    Files.write(new byte[] { 15 }, winner);
+    File root = tf.getRoot();
+    winner.createNewFile();
+    loser.createNewFile();
+    database.addEdge(winner, loser);
+
+    TransitiveDiGraph edges = database.queryEdges();
+    assertThat(edges.getCurrentEdgeCount(), is(1));
+    // Set<File> ignored = database.queryIgnored(root, MediaType.IMAGE, true);
+
+    // assertThat(ignored, not(hasItem(file)));
+  }
+
 }
