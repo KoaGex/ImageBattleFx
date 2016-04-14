@@ -1,24 +1,25 @@
 package org.imagebattle;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
-import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.stream.Stream;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.jgrapht.graph.DefaultEdge;
-import org.jgrapht.graph.SimpleDirectedGraph;
 
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.util.Pair;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.jgrapht.graph.DefaultEdge;
+import org.jgrapht.graph.SimpleDirectedGraph;
 
 /**
  * 
@@ -42,24 +43,26 @@ public class TransitiveDiGraph extends SimpleDirectedGraph<File, DefaultEdge> {
 
   @Override
   public DefaultEdge addEdge(File sourceVertex, File targetVertex) {
-    // DefaultEdge result = super.addEdge(sourceVertex, targetVertex);
+    List<DefaultEdge> addEdgesTransitive = addEdgesTransitive(sourceVertex, targetVertex);
+    return addEdgesTransitive.isEmpty() ? null : addEdgesTransitive.get(0);
+  }
 
-    DefaultEdge result = null;
+  public List<DefaultEdge> addEdgesTransitive(File sourceVertex, File targetVertex) {
+
+    List<DefaultEdge> result = new ArrayList<>();
 
     LOG.trace(sourceVertex.getName() + " won against " + targetVertex.getName());
 
-    BiConsumer<File, File> addEdge = (from, to) -> {
+    BiFunction<File, File, DefaultEdge> addEdge = (from, to) -> {
       boolean edgeExists = super.containsEdge(from, to) || super.containsEdge(to, from);
       if (edgeExists) {
         LOG.trace("edge already set:" + from.getName() + " -> " + to.getName());
+        return null;
       } else {
-        // use super. without it would quickly result in an infinite
-        // recursive loop
+        // use super. without it would quickly result in an infinite recursive loop
         DefaultEdge newEdge = super.addEdge(from, to);
-        // TODO use the return value ?!
         LOG.trace("add edge {} -> {} . newEdge: {}", from.getName(), to.getName(), newEdge);
-        // result = (result == null) ? result2 : result; TODO after
-        // adding use getEdge ?
+        return newEdge;
       }
     };
 
@@ -75,7 +78,10 @@ public class TransitiveDiGraph extends SimpleDirectedGraph<File, DefaultEdge> {
       File b = current.getKey();
       File c = current.getValue();
 
-      addEdge.accept(b, c);
+      DefaultEdge edge = addEdge.apply(b, c);
+      if (edge != null) {
+        result.add(edge);
+      }
 
       // b -> c -> d
       super.outgoingEdgesOf(c).stream()//
