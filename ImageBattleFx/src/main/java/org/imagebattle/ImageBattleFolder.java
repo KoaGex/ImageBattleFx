@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -28,6 +29,7 @@ import org.imagebattle.chooser.RandomCandidateChooser;
 import org.imagebattle.chooser.RankingTopDownCandidateChooser;
 import org.imagebattle.chooser.SameWinLoseRationCandidateChooser;
 import org.imagebattle.chooser.WinnerOrientedCandidateChooser;
+import org.jgrapht.graph.DefaultEdge;
 
 /**
  * Represents one folder the user has chosen. Files that are direct or indirect children of this
@@ -96,7 +98,7 @@ public class ImageBattleFolder {
     });
 
     // Merge in ignored files from CentralStorage.
-    Set<File> readIgnoreFile = centralStorage.readIgnoreFile(chosenDirectory, fileRegex, recursive);
+    Set<File> readIgnoreFile = centralStorage.readIgnoreFile(chosenDirectory, mediaType, recursive);
     ignoredFiles.addAll(readIgnoreFile);
 
     // search for new images and add them
@@ -206,8 +208,16 @@ public class ImageBattleFolder {
 
   public void makeDecision(File pWinner, File pLoser) {
 
-    graph.addEdge(pWinner, pLoser);
+    List<DefaultEdge> newEdges = graph.addEdgesTransitive(pWinner, pLoser);
+
+    Function<DefaultEdge, Pair<File, File>> function = edge -> new Pair<>(graph.getEdgeTarget(edge),
+        graph.getEdgeSource(edge));
     centralStorage.addEdges(graph);
+
+    List<Pair<File, File>> newEdgePairs = newEdges.stream()//
+        .map(function)//
+        .collect(Collectors.toList());
+    centralStorage.addEdges(newEdgePairs);
 
     // Clean up inconsistent central storage (when files are both ignored and in the graph).
     centralStorage.removeFromIgnored(pLoser);
