@@ -19,6 +19,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javafx.util.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -119,6 +120,12 @@ public class CentralStorage {
     });
 
     return graph;
+  }
+
+  void addEdges(List<Pair<File, File>> newEdges) {
+    for (Pair<File, File> pair : newEdges) {
+      database.addEdge(pair.getKey(), pair.getValue());
+    }
   }
 
   void addEdges(TransitiveDiGraph graph) {
