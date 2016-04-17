@@ -93,7 +93,12 @@ public class CentralStorage {
       }
     });
 
-    log.info("node count: {}    edge count:", graph.vertexSet().size(), graph.edgeSet().size());
+    log.info("node count: {}    edge count: {}", graph.vertexSet().size(), graph.edgeSet().size());
+
+    TransitiveDiGraph graphFromDatabase = database.queryEdges(chosenDirectory, matchesFileRegex,
+        recursive);
+    log.info("database graph node count: {}    edge count: {}",
+        graphFromDatabase.vertexSet().size(), graphFromDatabase.edgeSet().size());
 
     return graph;
   }
@@ -229,18 +234,20 @@ public class CentralStorage {
    *          Each of the given files should be ignored in all coming media battles.
    */
   void addToIgnored(File ignoredFile) {
-    Set<String> ignoredFiles = readFile(ignoreFile);
-
-    String absolutePath = ignoredFile.getAbsolutePath();
     database.addToIgnore(ignoredFile);
-    ignoredFiles.add(absolutePath);
 
-    String newIgnoredFiles = ignoredFiles.stream()//
-        .sorted()//
-        .collect(Collectors.joining(System.lineSeparator()));
-
-    log.trace(newIgnoredFiles);
-    writeStringIntoFile(newIgnoredFiles, ignoreFile);
+    // TODO remove
+    // Set<String> ignoredFiles = readFile(ignoreFile);
+    //
+    // String absolutePath = ignoredFile.getAbsolutePath();
+    // ignoredFiles.add(absolutePath);
+    //
+    // String newIgnoredFiles = ignoredFiles.stream()//
+    // .sorted()//
+    // .collect(Collectors.joining(System.lineSeparator()));
+    //
+    // log.trace(newIgnoredFiles);
+    // writeStringIntoFile(newIgnoredFiles, ignoreFile);
 
   }
 
