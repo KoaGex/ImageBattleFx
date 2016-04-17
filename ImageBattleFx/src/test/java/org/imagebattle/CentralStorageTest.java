@@ -149,22 +149,6 @@ public class CentralStorageTest {
   }
 
   @Test
-  public void addToIgnore() throws IOException {
-    // prepare
-    File file = tf.newFile("a.jpg");
-    CentralStorage centralStorage = centralStorageRule.centralStorage();
-
-    // act
-    centralStorage.addToIgnored(file);
-
-    // assert
-    List<String> lines = Files.readAllLines(ignorePath);
-    assertThat("line count", lines.size(), is(1));
-    assertThat("line content", lines.get(0), is(file.getAbsolutePath()));
-
-  }
-
-  @Test
   public void removeFromIgnore() throws IOException {
 
     // prepare
