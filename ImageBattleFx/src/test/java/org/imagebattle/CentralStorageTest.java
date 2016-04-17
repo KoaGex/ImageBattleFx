@@ -1,7 +1,6 @@
 package org.imagebattle;
 
 import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsCollectionContaining.hasItem;
 import static org.junit.Assert.assertThat;
 
 import java.io.BufferedWriter;
@@ -11,14 +10,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hamcrest.core.IsCollectionContaining;
-import org.hamcrest.core.IsEqual;
 import org.hamcrest.core.IsNot;
 import org.jgrapht.graph.DefaultEdge;
 import org.junit.Assert;
@@ -100,29 +97,6 @@ public class CentralStorageTest {
   }
 
   /**
-   * An absolute path to a file within the ignore file should be read.
-   * 
-   * @throws IOException
-   */
-  @Test
-  public void testReadIgnoreFile() throws IOException {
-    // prepare
-    File file = new File("ignore_test_file.jpg");
-    file = new File(file.getAbsolutePath());
-    List<String> asList = Arrays.asList(file.getAbsolutePath());
-    Files.write(ignorePath, asList);
-    CentralStorage centralStorage = centralStorageRule.centralStorage();
-
-    // act
-    Set<File> readIgnoreFile = centralStorage.readIgnoreFile();
-
-    // assert
-    Assert.assertThat("ignoreFile does not contain the correct file", readIgnoreFile,
-        hasItem(file));
-    Assert.assertThat("count", readIgnoreFile.size(), IsEqual.equalTo(1));
-  }
-
-  /**
    * {@link CentralStorage#removeFromEdges(File)}
    * 
    * @throws IOException
@@ -146,39 +120,6 @@ public class CentralStorageTest {
     // assert
     TransitiveDiGraph readGraph = centralStorage.readGraph();
     assertThat(readGraph.vertexSet(), IsNot.not(IsCollectionContaining.hasItem(fileToIgnore)));
-  }
-
-  @Test
-  public void removeFromIgnore() throws IOException {
-
-    // prepare
-    File file = tf.newFile("1.jpg");
-    File file2 = tf.newFile("2.jpg");
-    CentralStorage centralStorage = centralStorageRule.centralStorage();
-    centralStorage.addToIgnored(file);
-    centralStorage.addToIgnored(file2);
-
-    // act
-    centralStorage.removeFromIgnored(file);
-
-    // assert
-    Set<File> ignoredFiles = centralStorage.readIgnoreFile();
-    assertThat(ignoredFiles.size(), is(1));
-  }
-
-  @Test
-  public void readFileWithUmlauts() throws IOException {
-    // prepare
-    Files.write(ignorePath, "ü".getBytes());
-    CentralStorage centralStorage = centralStorageRule.centralStorage();
-
-    // act
-    Set<File> set = centralStorage.readIgnoreFile();
-
-    // assert
-    File onlyFile = set.iterator().next();
-    assertThat(onlyFile.getName(), is("ü"));
-
   }
 
 }
