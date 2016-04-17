@@ -13,7 +13,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -168,27 +167,7 @@ public class CentralStorage {
   }
 
   Set<File> readIgnoreFile() {
-    Set<String> readFile = readFile(ignoreFile);
-    Set<File> queryIgnored = database.queryIgnored();
-
-    log.debug("files in file: {}    files in db: {}", readFile.size(), queryIgnored.size());
-    Set<File> result = readFile.stream()//
-        .map(File::new)//
-        .collect(Collectors.toSet());
-
-    // migration
-    Map<Boolean, List<File>> ignoredFilesThatAreNotInDb = result.stream()//
-        .filter(file -> !queryIgnored.contains(file))//
-        .filter(File::exists)//
-        // .limit(20)// dont migrate everything at once
-        .collect(Collectors.partitioningBy(ImageBattleApplication.imagePredicate));
-
-    List<File> images = ignoredFilesThatAreNotInDb.get(Boolean.TRUE);
-    List<File> music = ignoredFilesThatAreNotInDb.get(Boolean.FALSE);
-    images.forEach(image -> database.addToIgnore(image));
-    music.forEach(song -> database.addToIgnore(song));
-
-    return result;
+    return database.queryIgnored();
   }
 
   /**
