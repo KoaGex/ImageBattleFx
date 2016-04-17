@@ -103,6 +103,54 @@ class Database {
     return result;
   }
 
+  TransitiveDiGraph queryEdges(File chosenDirectory, Predicate<? super File> matchesFileRegex,
+      Boolean recursive) {
+
+    String query = "select f_win.absolute_path, f_los.absolute_path " + //
+        " from " + EDGES + " e " + //
+        " join  " + MEDIA_OBJECTS + " m_win" + //
+        " on m_win.id = e.winner " + //
+        " join " + FILES + " f_win " + //
+        " on f_win.media_object = m_win.id " + //
+        " join  " + MEDIA_OBJECTS + " m_los" + //
+        " on m_los.id = e.loser " + //
+        " join " + FILES + " f_los " + //
+        " on f_los.media_object = m_los.id " //
+        ;
+
+    RowMapper<Pair<String, String>> rowMapper = resultSet -> new Pair<String, String>(
+        resultSet.getString(1), //
+        resultSet.getString(2)//
+    );
+    List<Pair<String, String>> filesPaths = query(query, rowMapper);
+    System.err.println(filesPaths.size());
+    System.err.println(filesPaths.get(0));
+
+    Predicate<File> containedRecursively = file -> {
+      return file.getAbsolutePath().startsWith(chosenDirectory.getAbsolutePath());
+    };
+    Predicate<File> containedDirectly = file -> {
+      List<File> directorFiles = Arrays.asList(chosenDirectory.listFiles());
+      return directorFiles.contains(file);
+    };
+    Predicate<File> matchesChosenDirectory = recursive ? containedRecursively : containedDirectly;
+
+    Predicate<File> acceptFile = matchesChosenDirectory.and(matchesFileRegex);
+
+    TransitiveDiGraph result = new TransitiveDiGraph();
+    for (Pair<String, String> pair : filesPaths) {
+      File winner = new File(pair.getKey());
+      File loser = new File(pair.getValue());
+      if (acceptFile.test(winner) && acceptFile.test(loser)) {
+        result.addVertex(winner);
+        result.addVertex(loser);
+        result.addEdge(winner, loser);
+      }
+    }
+
+    return result;
+  }
+
   /**
    * @param mediaObject
    */
