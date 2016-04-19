@@ -4,19 +4,11 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javafx.util.Pair;
 import org.apache.logging.log4j.LogManager;
@@ -38,66 +30,26 @@ public class CentralStorage {
 
   private Logger log = LogManager.getLogger();
 
-  public static final String GRAPH_FILE = "mediaBattleGraph.csv";
-  public static final String IGNORE_FILE = "mediaBattleIgnore.csv";
   public static final String SQLITE_FILE = "mediaBattleDatabase.sqlite";
-
-  private final File graphFile;
-
-  private final File ignoreFile;
 
   private final Database database;
 
   /**
    * Constructor
-   * 
-   * @param graphFileName
-   * @param ignoreFileName
    */
-  public CentralStorage(String graphFileName, String ignoreFileName, String sqliteFileName) {
-    graphFile = getFile(graphFileName);
-    ignoreFile = getFile(ignoreFileName);
+  public CentralStorage(String sqliteFileName) {
     database = new Database(new SqliteDatabase(getFile(sqliteFileName)));
   }
 
-  TransitiveDiGraph readGraph(File chosenDirectory, Predicate<? super File> matchesFileRegex,
-      Boolean recursive) {
+  TransitiveDiGraph readGraph(//
+      File chosenDirectory, //
+      Predicate<? super File> matchesFileRegex, //
+      Boolean recursive//
+  ) {
 
-    Predicate<File> containedRecursively = file -> {
-      return file.getAbsolutePath().startsWith(chosenDirectory.getAbsolutePath());
-    };
-    Predicate<File> containedDirectly = file -> {
-      List<File> directorFiles = Arrays.asList(chosenDirectory.listFiles());
-      return directorFiles.contains(file);
-    };
-    Predicate<File> matchesChosenDirectory = recursive ? containedRecursively : containedDirectly;
-
-    Predicate<File> acceptFile = matchesChosenDirectory.and(matchesFileRegex);
-
-    Set<String> oldFileContent = readGraphCsv();
-    TransitiveDiGraph graph = new TransitiveDiGraph();
-    oldFileContent.forEach(line -> {
-      String[] split = line.split(";");
-      String fromString = split[0];
-      String toString = split[1];
-      File from = new File(fromString);
-      File to = new File(toString);
-
-      // Adding vertexes will not create duplicates.
-      if (acceptFile.test(from) && acceptFile.test(to)) {
-        graph.addVertex(from);
-        graph.addVertex(to);
-
-        graph.addEdge(from, to);
-      }
-    });
-
-    log.info("node count: {}    edge count: {}", graph.vertexSet().size(), graph.edgeSet().size());
-
-    TransitiveDiGraph graphFromDatabase = database.queryEdges(chosenDirectory, matchesFileRegex,
-        recursive);
-    log.info("database graph node count: {}    edge count: {}",
-        graphFromDatabase.vertexSet().size(), graphFromDatabase.edgeSet().size());
+    TransitiveDiGraph graph = database.queryEdges(chosenDirectory, matchesFileRegex, recursive);
+    log.info("database graph node count: {}    edge count: {}", graph.vertexSet().size(),
+        graph.edgeSet().size());
 
     return graph;
   }
@@ -106,24 +58,7 @@ public class CentralStorage {
    * @return The whole graph with all saved edges. It does not save files without edges.
    */
   TransitiveDiGraph readGraph() {
-    TransitiveDiGraph graph = new TransitiveDiGraph();
-
-    Set<String> oldFileContent = readGraphCsv();
-    oldFileContent.forEach(line -> {
-      String[] split = line.split(";");
-      String fromString = split[0];
-      String toString = split[1];
-      File from = new File(fromString);
-      File to = new File(toString);
-
-      // Adding vertexes will not create duplicates.
-      graph.addVertex(from);
-      graph.addVertex(to);
-
-      graph.addEdge(from, to);
-    });
-
-    return graph;
+    return database.queryEdges();
   }
 
   void addEdges(List<Pair<File, File>> newEdges) {
@@ -133,26 +68,7 @@ public class CentralStorage {
   }
 
   void addEdges(TransitiveDiGraph graph) {
-
-    /*
-     * Idea: use observable list or observable set? then only add changes to the file.
-     * 
-     * Why not? Unecessary optimisation. Think about it again when performance issues arise.
-     */
-
-    Set<String> oldFileContent = readGraphCsv();
-
-    Stream<String> edgesOfCurrentGraphStream = edgeLines(graph);
-
-    String graphCsvContent = Stream.concat(oldFileContent.stream(), edgesOfCurrentGraphStream)//
-        .distinct()//
-        .sorted()//
-        .collect(Collectors.joining(System.lineSeparator())); // FIXME heap space
-
-    log.debug("file lines before save: {}    current edge count: {} ", oldFileContent.size(),
-        graph.edgeSet().size());
-
-    writeStringIntoFile(graphCsvContent, graphFile);
+    addEdges(graph.getEdgePairs());
   }
 
   /**
@@ -175,20 +91,7 @@ public class CentralStorage {
    *          Delete all edges and add it to the ignore list.
    */
   void removeFromEdges(File fileToIgnore) {
-    TransitiveDiGraph graph = readGraph();
-    int edgesBefore = graph.edgeSet().size();
-    graph.removeVertex(fileToIgnore);
-    int edgesAfter = graph.edgeSet().size();
-
-    log.debug("removed {} and with it {} edges", fileToIgnore, edgesBefore - edgesAfter);
-
-    Stream<String> edgeLines = edgeLines(graph);
-
-    String graphCsvContent = edgeLines.sorted()// sorted to easily spot changes with diff
-        // no distinct needed because nothing was added.
-        .collect(Collectors.joining(System.lineSeparator()));
-
-    writeStringIntoFile(graphCsvContent, graphFile);
+    database.removeFromEdges(fileToIgnore);
   }
 
   /**
@@ -214,35 +117,9 @@ public class CentralStorage {
    */
   void addToIgnored(File ignoredFile) {
     database.addToIgnore(ignoredFile);
-
-    // TODO remove
-    // Set<String> ignoredFiles = readFile(ignoreFile);
-    //
-    // String absolutePath = ignoredFile.getAbsolutePath();
-    // ignoredFiles.add(absolutePath);
-    //
-    // String newIgnoredFiles = ignoredFiles.stream()//
-    // .sorted()//
-    // .collect(Collectors.joining(System.lineSeparator()));
-    //
-    // log.trace(newIgnoredFiles);
-    // writeStringIntoFile(newIgnoredFiles, ignoreFile);
-
   }
 
   void removeFromIgnored(File file) {
-    Set<String> oldIgnoredFiles = readFile(ignoreFile); // does set mess with the ordering?
-
-    boolean wasRemoved = oldIgnoredFiles.remove(file.getAbsolutePath());
-
-    String newIgnoredFiles = oldIgnoredFiles.stream()//
-        .distinct()//
-        .sorted()//
-        .collect(Collectors.joining(System.lineSeparator()));
-
-    log.debug("file {} was removed: {}", file, wasRemoved);
-    writeStringIntoFile(newIgnoredFiles, ignoreFile);
-
     database.removeFromIgnore(file);
   }
 
@@ -253,36 +130,9 @@ public class CentralStorage {
     return file;
   }
 
-  private Set<String> readGraphCsv() {
-    return readFile(graphFile);
-  }
-
-  private Set<String> readFile(File file) {
-    log.debug(file);
-    Path path = Paths.get(file.getAbsolutePath());
-    List<String> readAllLines = null;
-    try {
-      // charset to support german umlauts
-      readAllLines = Files.readAllLines(path, StandardCharsets.ISO_8859_1);
-    } catch (NoSuchFileException e) {
-      log.debug("file {} does not exist", file);
-    } catch (IOException e) {
-      throw new UncheckedIOException(e);
-    }
-    readAllLines = readAllLines == null ? new ArrayList<>() : readAllLines;
-    return new HashSet<>(readAllLines);
-  }
-
-  private Stream<String> edgeLines(TransitiveDiGraph graph) {
-    Stream<String> edgesOfCurrentGraphStream = graph.edgeSet().stream()//
-        .map(edge -> {
-          String edgeSource = graph.getEdgeSource(edge).getAbsolutePath();
-          String edgeTarget = graph.getEdgeTarget(edge).getAbsolutePath();
-          return edgeSource + ";" + edgeTarget;
-        });
-    return edgesOfCurrentGraphStream;
-  }
-
+  /**
+   * @return Files that ignored but at the same time have edges.
+   */
   List<File> getInconsistencies() {
     TransitiveDiGraph graph = readGraph();
     Set<File> vertexSet = graph.vertexSet();
@@ -298,4 +148,7 @@ public class CentralStorage {
     return inconsistencies;
   }
 
+  void registerFiles(Collection<File> files) {
+    database.registerFiles(files);
+  }
 }
