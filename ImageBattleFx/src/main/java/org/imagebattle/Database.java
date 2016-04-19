@@ -9,14 +9,18 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javafx.util.Pair;
 import javax.sql.DataSource;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * A database to store everything the media battle application wants to save.
@@ -25,6 +29,7 @@ import javax.sql.DataSource;
  *
  */
 class Database {
+  private Logger log = LogManager.getLogger();
 
   private static final String IGNORED = "ignored";
   private static final String FILES = "files";
@@ -62,8 +67,21 @@ class Database {
     int winnerId = mediaId(winner);
     int loserId = mediaId(loser);
 
+    if (winnerId == loserId) {
+      throw new IllegalArgumentException(
+          "These files have the same content. An edge between them is forbidden: " + winner + " ,  "
+              + loser);
+    }
+
     String insert = "insert into " + EDGES + " values (" + winnerId + "," + loserId + ")";
     executeSql(insert);
+  }
+
+  void removeFromEdges(File file) {
+    int id = mediaId(file);
+
+    String delete = "delete from " + EDGES + " where winner =  " + id + " or loser = " + id;
+    executeSql(delete);
   }
 
   TransitiveDiGraph queryEdges() {
@@ -80,8 +98,8 @@ class Database {
         " on f_los.media_object = m_los.id " //
         ;
 
-    RowMapper<Pair<String, String>> rowMapper = resultSet -> new Pair(resultSet.getString(1),
-        resultSet.getString(2));
+    RowMapper<Pair<String, String>> rowMapper = resultSet -> new Pair<String, String>(
+        resultSet.getString(1), resultSet.getString(2));
     List<Pair<String, String>> filesPaths = query(query, rowMapper);
     System.err.println(filesPaths.size());
     System.err.println(filesPaths.get(0));
@@ -123,8 +141,6 @@ class Database {
         resultSet.getString(2)//
     );
     List<Pair<String, String>> filesPaths = query(query, rowMapper);
-    System.err.println(filesPaths.size());
-    System.err.println(filesPaths.get(0));
 
     Predicate<File> containedRecursively = file -> {
       return file.getAbsolutePath().startsWith(chosenDirectory.getAbsolutePath());
@@ -137,11 +153,34 @@ class Database {
 
     Predicate<File> acceptFile = matchesChosenDirectory.and(matchesFileRegex);
 
+    List<Pair<String, String>> matchingPairs = filesPaths.stream()//
+        .filter(pair -> {
+          File winner = new File(pair.getKey());
+          File loser = new File(pair.getValue());
+          return acceptFile.test(winner) && acceptFile.test(loser);
+        })//
+        .collect(Collectors.toList());
+
+    Set<String> duplicateFiles = Stream.concat(matchingPairs.stream().map(pair -> pair.getKey()),
+
+        matchingPairs.stream().map(pair -> pair.getKey()))//
+        .distinct()//
+        .collect(Collectors.groupingBy(file -> new FileContentHash(new File(file)).hash()))//
+        .entrySet()//
+        .stream()//
+        .map(Entry::getValue)//
+        .flatMap(list -> list.stream().skip(1))//
+        .collect(Collectors.toSet());
+
+    log.info("duplicate files {}", duplicateFiles);
+
     TransitiveDiGraph result = new TransitiveDiGraph();
-    for (Pair<String, String> pair : filesPaths) {
-      File winner = new File(pair.getKey());
-      File loser = new File(pair.getValue());
-      if (acceptFile.test(winner) && acceptFile.test(loser)) {
+    for (Pair<String, String> pair : matchingPairs) {
+      String winnerString = pair.getKey();
+      String loserString = pair.getValue();
+      File winner = new File(winnerString);
+      File loser = new File(loserString);
+      if (!duplicateFiles.contains(winnerString) && !duplicateFiles.contains(loserString)) {
         result.addVertex(winner);
         result.addVertex(loser);
         result.addEdge(winner, loser);
@@ -210,6 +249,11 @@ class Database {
     return filesPaths.stream()//
         .map(File::new)//
         .filter(File::exists)//
+        .collect(Collectors.groupingBy(file -> new FileContentHash(file).hash()))//
+        .entrySet()//
+        .stream()//
+        .map(Entry::getValue)//
+        .map(list -> list.get(0))//
         .collect(Collectors.toSet());
   }
 
@@ -274,7 +318,6 @@ class Database {
     executeSql(createTable);
   }
 
-  // TODO first aim to replace the ignore list, that is easier than the whole graph
   private void createIgnoredTable() {
     String createTable = " create table " + IGNORED + "(" + //
         " media_object INTEGER NON NULL," + //
@@ -359,6 +402,17 @@ class Database {
     List<MediaObject> result = query(query, mediaObjectMapper);
 
     return result;
+  }
+
+  /**
+   * @param files
+   *          for each determine hash and create it in the files and media_object table if not
+   *          already present.
+   */
+  void registerFiles(Collection<File> files) {
+    for (File file : files) {
+      mediaId(file);
+    }
   }
 
   /**

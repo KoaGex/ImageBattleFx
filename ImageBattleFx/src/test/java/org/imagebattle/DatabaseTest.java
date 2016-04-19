@@ -10,11 +10,13 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
 
 import com.google.common.io.Files;
+import org.hamcrest.CoreMatchers;
 import org.hamcrest.collection.IsCollectionWithSize;
 import org.junit.After;
 import org.junit.Before;
@@ -117,6 +119,28 @@ public class DatabaseTest {
 
   }
 
+  /**
+   * Two files are added but they have the same content. The database should only return one of
+   * them.
+   * 
+   * @throws IOException
+   */
+  @Test
+  public void readFromIgnoredUnique() throws IOException {
+    File file = tf.newFile("a.jpg");
+    File file2 = tf.newFile("b.jpg");
+    Files.write("aa".getBytes(), file);
+    Files.write("aa".getBytes(), file2);
+    database.addToIgnore(file);
+    database.addToIgnore(file2);
+
+    Set<File> ignored = database.queryIgnored();
+
+    assertThat(ignored, CoreMatchers.anyOf(hasItem(file), hasItem(file2)));
+    assertThat(ignored.size(), is(1));
+
+  }
+
   @Test
   public void removeFromIgnore() throws IOException {
     File file = tf.newFile("a.jpg");
@@ -166,16 +190,34 @@ public class DatabaseTest {
     Files.write(new byte[] { 13 }, winner);
     File loser = tf.newFile("b.mp3");
     Files.write(new byte[] { 15 }, winner);
-    File root = tf.getRoot();
     winner.createNewFile();
     loser.createNewFile();
     database.addEdge(winner, loser);
 
     TransitiveDiGraph edges = database.queryEdges();
     assertThat(edges.getCurrentEdgeCount(), is(1));
-    // Set<File> ignored = database.queryIgnored(root, MediaType.IMAGE, true);
+  }
 
-    // assertThat(ignored, not(hasItem(file)));
+  // TODO graph duplicate test
+  @Test
+  public void queryEdgesUnique() throws IOException {
+    // TODO what happens if winner and loser are the same file?
+    File winner = tf.newFile("a.mp3");
+    Files.write(new byte[] { 13 }, winner);
+    File winner2 = tf.newFile("c.mp3");
+    Files.write(new byte[] { 13 }, winner2);
+    File loser = tf.newFile("b.mp3");
+    Files.write(new byte[] { 15 }, loser);
+    winner.createNewFile();
+    loser.createNewFile();
+    database.registerFiles(Arrays.asList(winner2));
+    database.addEdge(winner, loser);
+
+    TransitiveDiGraph edges = database.queryEdges(tf.getRoot(), MediaType.MUSIC.predicate, false);
+    assertThat(edges.getCurrentEdgeCount(), is(1));
+    Set<File> vertexSet = edges.vertexSet();
+    assertThat(vertexSet, CoreMatchers.anyOf(hasItem(winner), hasItem(winner2)));
+    assertThat(vertexSet.size(), is(2));
   }
 
 }
