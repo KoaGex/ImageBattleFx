@@ -10,6 +10,8 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javafx.beans.property.BooleanProperty;
@@ -209,6 +211,18 @@ public class TransitiveDiGraph extends SimpleDirectedGraph<File, DefaultEdge> {
 
   ReadOnlyBooleanProperty finishedProperty() {
     return finished;
+  }
+
+  List<Pair<File, File>> getEdgePairs() {
+
+    Function<DefaultEdge, Pair<File, File>> function = edge -> new Pair<>(this.getEdgeTarget(edge),
+        this.getEdgeSource(edge));
+
+    List<Pair<File, File>> newEdgePairs = this.edgeSet().stream()//
+        .map(function)//
+        .collect(Collectors.toList());
+
+    return newEdgePairs;
   }
 
   private void checkFinished() {
