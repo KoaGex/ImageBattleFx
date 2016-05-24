@@ -88,6 +88,12 @@ public class ImageBattleFolder {
 
     log.info("chosenDirectory: {}", chosenDirectory);
 
+    // search for new images and add them
+    LinkedList<File> currentLevel = findFiles(chosenDirectory, recursive, fileRegex);
+
+    // register new files so centralStorage can return them in readGraph and readIgnoreFile.
+    centralStorage.registerFiles(currentLevel);
+
     // Merge in vertexes and edges from CentralStorage.
     TransitiveDiGraph readGraph = centralStorage.readGraph(chosenDirectory, fileRegex, recursive);
     readGraph.vertexSet().forEach(graph::addVertex);
@@ -100,43 +106,6 @@ public class ImageBattleFolder {
     // Merge in ignored files from CentralStorage.
     Set<File> readIgnoreFile = centralStorage.readIgnoreFile(chosenDirectory, mediaType, recursive);
     ignoredFiles.addAll(readIgnoreFile);
-
-    // search for new images and add them
-    // TODO handle directory without images chosen
-    LinkedList<File> currentLevel = new LinkedList<>();
-
-    // TODO refactor: Function<File, List<File>>
-    if (recursive) {
-      LinkedList<File> queue = new LinkedList<>();
-      queue.add(chosenDirectory);
-      while (!queue.isEmpty()) {
-        File currentDirectory = queue.removeFirst();
-
-        File[] subdirectories = currentDirectory.listFiles();
-        if (subdirectories != null) {
-          List<File> asList = Arrays.asList(subdirectories);
-          Map<Boolean, List<File>> partition = asList.stream()
-              .collect(Collectors.partitioningBy(File::isDirectory));
-
-          // add directories to queue
-          queue.addAll(partition.get(Boolean.TRUE));
-
-          // add matching files to current level
-          partition.get(Boolean.FALSE).stream()//
-              .filter(fileRegex)//
-              .forEach(currentLevel::add);
-        }
-      }
-    } else {
-      File[] allFiles = chosenDirectory.listFiles();
-      if (allFiles != null) {
-        for (File aFile : allFiles) {
-          if (fileRegex.test(aFile)) {
-            currentLevel.add(aFile);
-          }
-        }
-      }
-    }
 
     currentLevel.stream()//
         .filter(f -> !ignoredFiles.contains(f))//
@@ -175,6 +144,45 @@ public class ImageBattleFolder {
 
   }
 
+  private LinkedList<File> findFiles(File chosenDirectory, Boolean recursive,
+      Predicate<File> fileRegex) {
+    LinkedList<File> currentLevel = new LinkedList<>();
+
+    // TODO refactor: Function<File, List<File>>
+    if (recursive) {
+      LinkedList<File> queue = new LinkedList<>();
+      queue.add(chosenDirectory);
+      while (!queue.isEmpty()) {
+        File currentDirectory = queue.removeFirst();
+
+        File[] subdirectories = currentDirectory.listFiles();
+        if (subdirectories != null) {
+          List<File> asList = Arrays.asList(subdirectories);
+          Map<Boolean, List<File>> partition = asList.stream()
+              .collect(Collectors.partitioningBy(File::isDirectory));
+
+          // add directories to queue
+          queue.addAll(partition.get(Boolean.TRUE));
+
+          // add matching files to current level
+          partition.get(Boolean.FALSE).stream()//
+              .filter(fileRegex)//
+              .forEach(currentLevel::add);
+        }
+      }
+    } else {
+      File[] allFiles = chosenDirectory.listFiles();
+      if (allFiles != null) {
+        for (File aFile : allFiles) {
+          if (fileRegex.test(aFile)) {
+            currentLevel.add(aFile);
+          }
+        }
+      }
+    }
+    return currentLevel;
+  }
+
   /**
    * @return
    */
@@ -210,9 +218,11 @@ public class ImageBattleFolder {
 
     List<DefaultEdge> newEdges = graph.addEdgesTransitive(pWinner, pLoser);
 
-    Function<DefaultEdge, Pair<File, File>> function = edge -> new Pair<>(graph.getEdgeTarget(edge),
-        graph.getEdgeSource(edge));
-    centralStorage.addEdges(graph);
+    Function<DefaultEdge, Pair<File, File>> function = edge -> {
+      File winner = graph.getEdgeSource(edge);
+      File loser = graph.getEdgeTarget(edge);
+      return new Pair<>(winner, loser);
+    };
 
     List<Pair<File, File>> newEdgePairs = newEdges.stream()//
         .map(function)//

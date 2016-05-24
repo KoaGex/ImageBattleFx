@@ -6,9 +6,12 @@ import static org.junit.Assert.assertThat;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import com.google.common.io.Files;
+import javafx.util.Pair;
 import org.hamcrest.core.IsNot;
 import org.junit.Rule;
 import org.junit.Test;
@@ -25,14 +28,14 @@ public class ImageBattleFolderTest {
   @Test
   public void constructorEdge() throws IOException {
     // prepare
-    TransitiveDiGraph graph = new TransitiveDiGraph();
     File fileWinner = temporaryFolder.newFile("win.jpg");
     File fileLoser = temporaryFolder.newFile("lose.jpg");
-    graph.addVertex(fileWinner);
-    graph.addVertex(fileLoser);
-    graph.addEdge(fileWinner, fileLoser);
+    Files.write("win".getBytes(), fileWinner);
+    Files.write("los".getBytes(), fileLoser);
     CentralStorage centralStorage = centralStorageRule.centralStorage();
-    centralStorage.addEdges(graph);
+    List<Pair<File, File>> newEdges = new ArrayList<>();
+    newEdges.add(new Pair<File, File>(fileWinner, fileLoser));
+    centralStorage.addEdges(newEdges);
 
     File root = temporaryFolder.getRoot();
     Boolean recursive = true;
@@ -43,7 +46,10 @@ public class ImageBattleFolderTest {
     // assert
     List<ResultListEntry> resultList = folder.getResultList();
     ResultListEntry winnerEntry = resultList.get(0);
-    assertThat(winnerEntry.wins, is(1));
+
+    assertThat("winner loss count", winnerEntry.loses, is(0));
+    assertThat("win file", winnerEntry.file, is(fileWinner));
+    assertThat("win count", winnerEntry.wins, is(1));
 
     assertThat(resultList.size(), is(2));
   }
@@ -77,6 +83,8 @@ public class ImageBattleFolderTest {
     File root = temporaryFolder.getRoot();
     File fileWinner = temporaryFolder.newFile("win.jpg");
     File fileLoser = temporaryFolder.newFile("lose.jpg");
+    Files.write("win".getBytes(), fileWinner);
+    Files.write("los".getBytes(), fileLoser);
     Boolean recursive = false;
     CentralStorage centralStorage = centralStorageRule.centralStorage();
     ImageBattleFolder folder = new ImageBattleFolder(centralStorage, root, MediaType.IMAGE,
@@ -102,6 +110,8 @@ public class ImageBattleFolderTest {
     // prepare
     File fileWinner = temporaryFolder.newFile("win.jpg");
     File fileLoser = temporaryFolder.newFile("lose.jpg");
+    Files.write("win".getBytes(), fileWinner);
+    Files.write("los".getBytes(), fileLoser);
     File fileInconsistend = temporaryFolder.newFile("inconsistent.jpg");
     TransitiveDiGraph graph = new TransitiveDiGraph();
     graph.addVertex(fileWinner);
@@ -155,6 +165,8 @@ public class ImageBattleFolderTest {
     // prepare
     File fileWinner = temporaryFolder.newFile("win.jpg");
     File fileLoser = temporaryFolder.newFile("lose.jpg");
+    Files.write("win".getBytes(), fileWinner);
+    Files.write("los".getBytes(), fileLoser);
     File fileInconsistend = temporaryFolder.newFile("inconsistent.jpg");
     TransitiveDiGraph graph = new TransitiveDiGraph();
     graph.addVertex(fileWinner);
