@@ -57,6 +57,9 @@ class BattleImageView extends ImageView implements IMediaView {
       super.setImage(image);
     } catch (FileNotFoundException e1) {
       throw new UncheckedIOException(e1);
+    } catch (OutOfMemoryError e) {
+      log.error("OutOfMemoryError while loading file:" + imageFile);
+      throw e;
     }
     // speed by ~ 100ms but breaks the resolution reading => use SimpleImageInfo
     long end = System.currentTimeMillis();
