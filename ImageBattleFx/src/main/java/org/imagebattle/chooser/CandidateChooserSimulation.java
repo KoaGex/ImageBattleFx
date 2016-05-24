@@ -27,8 +27,7 @@ public class CandidateChooserSimulation {
     imageBattleDat.delete();
 
     boolean recursive = false;
-    CentralStorage centralStorage = new CentralStorage(CentralStorage.GRAPH_FILE,
-        CentralStorage.IGNORE_FILE, CentralStorage.SQLITE_FILE);
+    CentralStorage centralStorage = new CentralStorage(CentralStorage.SQLITE_FILE);
     ImageBattleFolder folder = new ImageBattleFolder(centralStorage, funPicsDir, MediaType.IMAGE,
         recursive);
 
