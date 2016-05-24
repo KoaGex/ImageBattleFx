@@ -28,8 +28,7 @@ public class ImageResultsSceneTest extends ApplicationTest {
 
     File folderDir = new File("src/test/resources");
 
-    CentralStorage centralStorage = new CentralStorage(CentralStorage.GRAPH_FILE,
-        CentralStorage.IGNORE_FILE, CentralStorage.SQLITE_FILE);
+    CentralStorage centralStorage = new CentralStorage(CentralStorage.SQLITE_FILE);
     Boolean recursive = false;
     ImageBattleFolder imageBattleFolder = new ImageBattleFolder(centralStorage, folderDir,
         MediaType.IMAGE, recursive);
