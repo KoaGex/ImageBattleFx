@@ -151,7 +151,7 @@ class Database {
     };
     Predicate<File> matchesChosenDirectory = recursive ? containedRecursively : containedDirectly;
 
-    Predicate<File> acceptFile = matchesChosenDirectory.and(matchesFileRegex);
+    Predicate<File> acceptFile = matchesChosenDirectory.and(matchesFileRegex).and(File::exists);
 
     List<Pair<String, String>> matchingPairs = filesPaths.stream()//
         .filter(pair -> {
@@ -161,11 +161,13 @@ class Database {
         })//
         .collect(Collectors.toList());
 
-    Set<String> duplicateFiles = Stream.concat(matchingPairs.stream().map(pair -> pair.getKey()),
+    Set<File> duplicateFiles = Stream.concat(matchingPairs.stream().map(pair -> pair.getKey()),
 
         matchingPairs.stream().map(pair -> pair.getKey()))//
         .distinct()//
-        .collect(Collectors.groupingBy(file -> new FileContentHash(new File(file)).hash()))//
+        .map(File::new)//
+        .filter(File::isFile)//
+        .collect(Collectors.groupingBy(file -> new FileContentHash(file).hash()))//
         .entrySet()//
         .stream()//
         .map(Entry::getValue)//
@@ -180,7 +182,7 @@ class Database {
       String loserString = pair.getValue();
       File winner = new File(winnerString);
       File loser = new File(loserString);
-      if (!duplicateFiles.contains(winnerString) && !duplicateFiles.contains(loserString)) {
+      if (!duplicateFiles.contains(winner) && !duplicateFiles.contains(loser)) {
         result.addVertex(winner);
         result.addVertex(loser);
         result.addEdge(winner, loser);
