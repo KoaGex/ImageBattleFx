@@ -158,8 +158,7 @@ public class ImageBattleApplication extends Application {
     // _stage.setFullScreen(true);
 
     // gather images
-    CentralStorage centralStorage = new CentralStorage(CentralStorage.GRAPH_FILE,
-        CentralStorage.IGNORE_FILE, CentralStorage.SQLITE_FILE);
+    CentralStorage centralStorage = new CentralStorage(CentralStorage.SQLITE_FILE);
     imageBattleFolder = new ImageBattleFolder(centralStorage, dir, mediaType, recursive);
 
     ratingScene = ratingSceneCreator.apply(imageBattleFolder, this::showResultsScene);
