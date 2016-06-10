@@ -28,8 +28,8 @@ import org.apache.logging.log4j.Logger;
  * @author KoaGex
  *
  */
-class Database {
-  private Logger log = LogManager.getLogger();
+final class Database {
+  private static final Logger LOG = LogManager.getLogger();
 
   private static final String IGNORED = "ignored";
   private static final String FILES = "files";
@@ -45,12 +45,12 @@ class Database {
    *          {@link SqliteDatabase}. Should the parameter type be changed to that class or keep
    *          using the interface?
    */
-  Database(DataSource dataSource) {
+  Database(final DataSource dataSource) {
     this.dataSource = dataSource;
 
-    Collection<String> tables = tables();
+    final Collection<String> tables = tables();
 
-    BiConsumer<String, Runnable> createIfMissing = (tableName, createMethod) -> {
+    final BiConsumer<String, Runnable> createIfMissing = (tableName, createMethod) -> {
       if (!tables.contains(tableName)) {
         createMethod.run();
       }
@@ -63,9 +63,9 @@ class Database {
 
   }
 
-  void addEdge(File winner, File loser) {
-    int winnerId = mediaId(winner);
-    int loserId = mediaId(loser);
+  protected void addEdge(final File winner, final File loser) {
+    final int winnerId = mediaId(winner);
+    final int loserId = mediaId(loser);
 
     if (winnerId == loserId) {
       throw new IllegalArgumentException(
@@ -73,20 +73,20 @@ class Database {
               + loser);
     }
 
-    String insert = "insert into " + EDGES + " values (" + winnerId + "," + loserId + ")";
+    final String insert = "insert into " + EDGES + " values (" + winnerId + "," + loserId + ")";
     executeSql(insert);
   }
 
-  void removeFromEdges(File file) {
-    int id = mediaId(file);
+  protected void removeFromEdges(final File file) {
+    final int id = mediaId(file);
 
-    String delete = "delete from " + EDGES + " where winner =  " + id + " or loser = " + id;
+    final String delete = "delete from " + EDGES + " where winner =  " + id + " or loser = " + id;
     executeSql(delete);
   }
 
   TransitiveDiGraph queryEdges() {
 
-    String query = "select f_win.absolute_path, f_los.absolute_path " + //
+    final String query = "select f_win.absolute_path, f_los.absolute_path " + //
         " from " + EDGES + " e " + //
         " join  " + MEDIA_OBJECTS + " m_win" + //
         " on m_win.id = e.winner " + //
@@ -98,21 +98,15 @@ class Database {
         " on f_los.media_object = m_los.id " //
         ;
 
-    RowMapper<Pair<String, String>> rowMapper = resultSet -> new Pair<String, String>(
+    final RowMapper<Pair<String, String>> rowMapper = resultSet -> new Pair<String, String>(
         resultSet.getString(1), resultSet.getString(2));
-    List<Pair<String, String>> filesPaths = query(query, rowMapper);
-    System.err.println(filesPaths.size());
-    System.err.println(filesPaths.get(0));
+    final List<Pair<String, String>> filesPaths = query(query, rowMapper);
+    LOG.debug(filesPaths.size());
 
-    // return filesPaths.stream()//
-    // .map(File::new)//
-    // .filter(File::exists)//
-    // .collect(Collectors.toSet());
-
-    TransitiveDiGraph result = new TransitiveDiGraph();
-    for (Pair<String, String> pair : filesPaths) {
-      File winner = new File(pair.getKey());
-      File loser = new File(pair.getValue());
+    final TransitiveDiGraph result = new TransitiveDiGraph();
+    for (final Pair<String, String> pair : filesPaths) {
+      final File winner = new File(pair.getKey());
+      final File loser = new File(pair.getValue());
       result.addVertex(winner);
       result.addVertex(loser);
       result.addEdge(winner, loser);
@@ -121,10 +115,13 @@ class Database {
     return result;
   }
 
-  TransitiveDiGraph queryEdges(File chosenDirectory, Predicate<? super File> matchesFileRegex,
-      Boolean recursive) {
+  TransitiveDiGraph queryEdges(//
+      final File chosenDirectory, //
+      final Predicate<? super File> matchesFileRegex, //
+      final Boolean recursive //
+  ) {
 
-    String query = "select f_win.absolute_path, f_los.absolute_path " + //
+    final String query = "select f_win.absolute_path, f_los.absolute_path " + //
         " from " + EDGES + " e " + //
         " join  " + MEDIA_OBJECTS + " m_win" + //
         " on m_win.id = e.winner " + //
@@ -136,34 +133,37 @@ class Database {
         " on f_los.media_object = m_los.id " //
         ;
 
-    RowMapper<Pair<String, String>> rowMapper = resultSet -> new Pair<String, String>(
+    final RowMapper<Pair<String, String>> rowMapper = resultSet -> new Pair<String, String>(
         resultSet.getString(1), //
         resultSet.getString(2)//
     );
-    List<Pair<String, String>> filesPaths = query(query, rowMapper);
+    final List<Pair<String, String>> filesPaths = query(query, rowMapper);
 
-    Predicate<File> containedRecursively = file -> {
+    final Predicate<File> containedRecursively = file -> {
       return file.getAbsolutePath().startsWith(chosenDirectory.getAbsolutePath());
     };
-    Predicate<File> containedDirectly = file -> {
-      List<File> directorFiles = Arrays.asList(chosenDirectory.listFiles());
+    final Predicate<File> containedDirectly = file -> {
+      final List<File> directorFiles = Arrays.asList(chosenDirectory.listFiles());
       return directorFiles.contains(file);
     };
-    Predicate<File> matchesChosenDirectory = recursive ? containedRecursively : containedDirectly;
+    final Predicate<File> matchesChosenDirectory = recursive ? containedRecursively
+        : containedDirectly;
 
-    Predicate<File> acceptFile = matchesChosenDirectory.and(matchesFileRegex).and(File::exists);
+    final Predicate<File> acceptFile = matchesChosenDirectory.and(matchesFileRegex)
+        .and(File::exists);
 
-    List<Pair<String, String>> matchingPairs = filesPaths.stream()//
+    final List<Pair<String, String>> matchingPairs = filesPaths.stream()//
         .filter(pair -> {
-          File winner = new File(pair.getKey());
-          File loser = new File(pair.getValue());
+          final File winner = new File(pair.getKey());
+          final File loser = new File(pair.getValue());
           return acceptFile.test(winner) && acceptFile.test(loser);
         })//
         .collect(Collectors.toList());
 
-    Set<File> duplicateFiles = Stream.concat(matchingPairs.stream().map(pair -> pair.getKey()),
+    final Set<File> duplicateFiles = Stream
+        .concat(matchingPairs.stream().map(pair -> pair.getKey()),
 
-        matchingPairs.stream().map(pair -> pair.getKey()))//
+            matchingPairs.stream().map(pair -> pair.getKey()))//
         .distinct()//
         .map(File::new)//
         .filter(File::isFile)//
@@ -174,14 +174,14 @@ class Database {
         .flatMap(list -> list.stream().skip(1))//
         .collect(Collectors.toSet());
 
-    log.info("duplicate files {}", duplicateFiles);
+    LOG.info("duplicate files {}", duplicateFiles);
 
-    TransitiveDiGraph result = new TransitiveDiGraph();
+    final TransitiveDiGraph result = new TransitiveDiGraph();
     for (Pair<String, String> pair : matchingPairs) {
-      String winnerString = pair.getKey();
-      String loserString = pair.getValue();
-      File winner = new File(winnerString);
-      File loser = new File(loserString);
+      final String winnerString = pair.getKey();
+      final String loserString = pair.getValue();
+      final File winner = new File(winnerString);
+      final File loser = new File(loserString);
       if (!duplicateFiles.contains(winner) && !duplicateFiles.contains(loser)) {
         result.addVertex(winner);
         result.addVertex(loser);
@@ -197,22 +197,22 @@ class Database {
    */
   void addToIgnore(File file) {
 
-    int id = mediaId(file);
+    final int id = mediaId(file);
 
-    String insert = "insert into " + IGNORED + " values (" + id + ")";
+    final String insert = "insert into " + IGNORED + " values (" + id + ")";
     executeSql(insert);
   }
 
   private int mediaId(File file) {
-    Optional<Integer> lookupIdByFile = lookupFile(file);
+    final Optional<Integer> lookupIdByFile = lookupFile(file);
 
     int id;
     if (lookupIdByFile.isPresent()) {
       id = lookupIdByFile.get();
     } else {
 
-      String hash = new FileContentHash(file).hash();
-      Optional<Integer> lookupMediaItemId = lookupMediaItemId(hash);
+      final String hash = new FileContentHash(file).hash();
+      final Optional<Integer> lookupMediaItemId = lookupMediaItemId(hash);
 
       if (lookupMediaItemId.isPresent()) {
         id = lookupMediaItemId.get();
@@ -230,8 +230,8 @@ class Database {
    * @param file
    */
   void removeFromIgnore(File file) {
-    int id = mediaId(file);
-    String delete = "delete from " + IGNORED + " where  media_object = " + id;
+    final int id = mediaId(file);
+    final String delete = "delete from " + IGNORED + " where  media_object = " + id;
     executeSql(delete);
   }
 
@@ -240,13 +240,12 @@ class Database {
    */
   Set<File> queryIgnored() {
 
-    String query = "select files.absolute_path from " + FILES + " join  " + MEDIA_OBJECTS + " on "
-        + MEDIA_OBJECTS + ".id =" + FILES + ".media_object join " + IGNORED + " on " + IGNORED
-        + ".media_object = " + MEDIA_OBJECTS + ".id";
+    final String query = "select files.absolute_path from " + FILES + " join  " + MEDIA_OBJECTS
+        + " on " + MEDIA_OBJECTS + ".id =" + FILES + ".media_object join " + IGNORED + " on "
+        + IGNORED + ".media_object = " + MEDIA_OBJECTS + ".id";
 
-    RowMapper<String> rowMapper = resultSet -> resultSet.getString(1);
-    List<String> filesPaths = query(query, rowMapper);
-    System.err.println(filesPaths.size());
+    final List<String> filesPaths = query(query, resultSet -> resultSet.getString(1));
+    LOG.debug(filesPaths.size());
 
     return filesPaths.stream()//
         .map(File::new)//
@@ -260,26 +259,27 @@ class Database {
   }
 
   Set<File> queryIgnored(File chosenDirectory, MediaType mediaType, Boolean recursive) {
-    String query = "select files.absolute_path from " + FILES + //
+    final String query = "select files.absolute_path from " + FILES + //
         " join  " + MEDIA_OBJECTS + //
         " on " + MEDIA_OBJECTS + ".id =" + FILES + ".media_object " + //
         " join " + IGNORED + //
         " on " + IGNORED + ".media_object = " + MEDIA_OBJECTS + ".id" + //
         " where " + MEDIA_OBJECTS + ".media_type = '" + mediaType.name() + "'";
 
-    RowMapper<String> rowMapper = resultSet -> resultSet.getString(1);
-    List<String> filesPaths = query(query, rowMapper);
+    final RowMapper<String> rowMapper = resultSet -> resultSet.getString(1);
 
     // block copied from CentralStorage
-    Predicate<File> containedRecursively = file -> {
+    final Predicate<File> containedRecursively = file -> {
       return file.getAbsolutePath().startsWith(chosenDirectory.getAbsolutePath());
     };
-    Predicate<File> containedDirectly = file -> {
-      List<File> directorFiles = Arrays.asList(chosenDirectory.listFiles());
+    final Predicate<File> containedDirectly = file -> {
+      final List<File> directorFiles = Arrays.asList(chosenDirectory.listFiles());
       return directorFiles.contains(file);
     };
-    Predicate<File> matchesChosenDirectory = recursive ? containedRecursively : containedDirectly;
+    final Predicate<File> matchesChosenDirectory = recursive ? containedRecursively
+        : containedDirectly;
 
+    final List<String> filesPaths = query(query, rowMapper);
     return filesPaths.stream()//
         .map(File::new)//
         .filter(File::exists)//
@@ -291,10 +291,9 @@ class Database {
   /**
    * @return Names of all tables in the sqlite database.
    */
-  Collection<String> tables() {
-    String queryAllTableNames = "SELECT name FROM sqlite_master WHERE type='table'";
-    RowMapper<String> rowMapper = resultSet -> resultSet.getString(1);
-    return query(queryAllTableNames, rowMapper);
+  protected Collection<String> tables() {
+    final String queryAllTableNames = "SELECT name FROM sqlite_master WHERE type='table'";
+    return query(queryAllTableNames, resultSet -> resultSet.getString(1));
   }
 
   /**
@@ -303,7 +302,7 @@ class Database {
    * 
    */
   private void createMediaObjectsTable() {
-    String createTable = " create table " + MEDIA_OBJECTS + "("
+    final String createTable = " create table " + MEDIA_OBJECTS + "("
         + "id INTEGER PRIMARY KEY, hash TEXT, media_type TEXT) ";
     executeSql(createTable);
   }
@@ -313,7 +312,7 @@ class Database {
    * 
    */
   private void createFilesTable() {
-    String createTable = " create table " + FILES + "(" + //
+    final String createTable = " create table " + FILES + "(" + //
         " media_object INTEGER NON NULL," + //
         " absolute_path TEXT," + //
         " FOREIGN KEY(media_object) REFERENCES " + MEDIA_OBJECTS + "(id)  ) ";
@@ -321,14 +320,14 @@ class Database {
   }
 
   private void createIgnoredTable() {
-    String createTable = " create table " + IGNORED + "(" + //
+    final String createTable = " create table " + IGNORED + "(" + //
         " media_object INTEGER NON NULL," + //
         " FOREIGN KEY(media_object) REFERENCES " + MEDIA_OBJECTS + "(id)  ) ";
     executeSql(createTable);
   }
 
   private void createEdgesTable() {
-    String createTable = " create table " + EDGES + "(" + //
+    final String createTable = " create table " + EDGES + "(" + //
         " winner INTEGER NON NULL," + //
         " loser  INTEGER NON NULL," + //
         " FOREIGN KEY(winner) REFERENCES " + MEDIA_OBJECTS + "(id) ,  " + //
@@ -346,9 +345,9 @@ class Database {
    * @param mediaType
    *          Currently String is allowed. This may later become an enum.
    */
-  void addMediaObject(String hash, MediaType mediaType) {
-    String insert = " insert into " + MEDIA_OBJECTS + "(hash,media_type) values ('" + hash + "','"
-        + mediaType.name() + "')";
+  void addMediaObject(final String hash, final MediaType mediaType) {
+    final String insert = " insert into " + MEDIA_OBJECTS + "(hash,media_type) values ('" + hash
+        + "','" + mediaType.name() + "')";
     executeSql(insert);
   }
 
@@ -356,10 +355,10 @@ class Database {
    * @param mediaObjectId
    * @param file
    */
-  void addFile(int mediaObjectId, File file) {
+  void addFile(final int mediaObjectId, final File file) {
 
     // TODO preparedStatement? test performance
-    String insert = "insert into " + FILES + " (media_object, absolute_path) values ("
+    final String insert = "insert into " + FILES + " (media_object, absolute_path) values ("
         + mediaObjectId + ",'" + file.getAbsolutePath() + "')";
 
     executeSql(insert);
@@ -369,20 +368,20 @@ class Database {
    * @param file
    * @return
    */
-  Optional<Integer> lookupFile(File file) {
+  protected Optional<Integer> lookupFile(final File file) {
 
-    String query = "select media_object from " + FILES + " where absolute_path = '"
+    final String query = "select media_object from " + FILES + " where absolute_path = '"
         + file.getAbsolutePath() + "'";
 
-    List<Integer> files = query(query, rs -> rs.getInt(1));
+    final List<Integer> files = query(query, rs -> rs.getInt(1));
     return files.stream()//
         .findAny();
 
   }
 
   Optional<Integer> lookupMediaItemId(String hash) {
-    String query = "select id from " + MEDIA_OBJECTS + " where hash = '" + hash + "'";
-    List<Integer> ids = query(query, rs -> rs.getInt(1));
+    final String query = "select id from " + MEDIA_OBJECTS + " where hash = '" + hash + "'";
+    final List<Integer> ids = query(query, resultSet -> resultSet.getInt(1));
     return ids.stream().findAny();
   }
 
@@ -390,18 +389,18 @@ class Database {
    * @return Zero or more {@link MediaObject} that match the given criteria.
    */
   Collection<MediaObject> queryMediaObjects() {
-    String query = "select * from " + MEDIA_OBJECTS;
+    final String query = "select * from " + MEDIA_OBJECTS;
 
-    RowMapper<MediaObject> mediaObjectMapper = resultSet -> {
-      int id = resultSet.getInt("id");
-      String hash = resultSet.getString("hash");
-      String mediaTypeString = resultSet.getString("media_type");
-      MediaType mediaType = MediaType.valueOf(mediaTypeString);
-      MediaObject mediaObject = new MediaObject(id, hash, mediaType);
+    final RowMapper<MediaObject> mediaObjectMapper = resultSet -> {
+      final int id = resultSet.getInt("id");
+      final String hash = resultSet.getString("hash");
+      final String mediaTypeString = resultSet.getString("media_type");
+      final MediaType mediaType = MediaType.valueOf(mediaTypeString);
+      final MediaObject mediaObject = new MediaObject(id, hash, mediaType);
       return mediaObject;
     };
 
-    List<MediaObject> result = query(query, mediaObjectMapper);
+    final List<MediaObject> result = query(query, mediaObjectMapper);
 
     return result;
   }
@@ -411,8 +410,8 @@ class Database {
    *          for each determine hash and create it in the files and media_object table if not
    *          already present.
    */
-  void registerFiles(Collection<File> files) {
-    for (File file : files) {
+  void registerFiles(final Collection<File> files) {
+    for (final File file : files) {
       mediaId(file);
     }
   }
@@ -421,35 +420,36 @@ class Database {
    * @param connection
    *          Use {@link #getSqliteConnection(File)}.
    * @param sql
-   *          Any sql statement that you want to be executed and don't expect an result from.
+   *          Any sql statement you want to be executed and don't expect an result from.
    */
-  private void executeSql(String sql) {
+  private void executeSql(final String sql) {
     try (Connection connection = dataSource.getConnection()) {
-      Statement statement = connection.createStatement();
+      final Statement statement = connection.createStatement();
       statement.execute(sql);
+      statement.close();
     } catch (SQLException e) {
-      throw new RuntimeException(e);
+      throw new IllegalStateException("sql execute error", e);
     }
   }
 
   private <T> List<T> query(String query, RowMapper<T> rowMapper) {
-    List<T> result;
-    try (Connection connection = dataSource.getConnection()) {
+    final List<T> result = new LinkedList<>();
+    try (Statement statement = dataSource.getConnection().createStatement()) {
 
-      Statement statement = connection.createStatement();
-      ResultSet resultSet = statement.executeQuery(query);
+      final ResultSet resultSet = statement.executeQuery(query);
 
-      result = new LinkedList<>();
       while (resultSet.next()) {
         result.add(rowMapper.map(resultSet));
       }
+      resultSet.close();
+      statement.close();
     } catch (SQLException e) {
-      throw new RuntimeException(e);
+      throw new IllegalStateException("sql query error", e);
     }
     return result;
   }
 
-  private MediaType detectMediaType(File file) {
+  private MediaType detectMediaType(final File file) {
     // TODO im not 100% happy with this. Create a class MediaFile that detects type while creating?
     return Arrays.stream(MediaType.values()).filter(type -> type.matches(file))//
         .findAny()//
