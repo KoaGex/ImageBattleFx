@@ -434,15 +434,14 @@ final class Database {
 
   private <T> List<T> query(String query, RowMapper<T> rowMapper) {
     final List<T> result = new LinkedList<>();
-    try (Statement statement = dataSource.getConnection().createStatement()) {
-
-      final ResultSet resultSet = statement.executeQuery(query);
-
-      while (resultSet.next()) {
-        result.add(rowMapper.map(resultSet));
+    try (Connection connection = dataSource.getConnection()) {
+      try (Statement statement = connection.createStatement()) {
+        try (ResultSet resultSet = statement.executeQuery(query)) {
+          while (resultSet.next()) {
+            result.add(rowMapper.map(resultSet));
+          }
+        }
       }
-      resultSet.close();
-      statement.close();
     } catch (SQLException e) {
       throw new IllegalStateException("sql query error", e);
     }
