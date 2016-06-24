@@ -15,6 +15,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.testfx.framework.junit.ApplicationTest;
+import org.testfx.service.query.NodeQuery;
 
 public class ImageResultsSceneTest extends ApplicationTest {
   @Rule
@@ -54,7 +55,8 @@ public class ImageResultsSceneTest extends ApplicationTest {
   public void test() {
     String query = ".switch-scene-button";
     clickOn(query, MouseButton.PRIMARY);
-    Node switchButton = this.lookup(query).queryFirst();
+    NodeQuery lookup = this.lookup(query);
+    Node switchButton = lookup.queryAll().iterator().next();
     assertThat(switched.get(), is(false));
     assertThat(switchButton.isDisabled(), is(true));
   }
