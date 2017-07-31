@@ -151,4 +151,13 @@ public class CentralStorage {
   void registerFiles(Collection<File> files) {
     database.registerFiles(files);
   }
+
+  List<ImageBattleFolder> folders() {
+    return database.queryFolders(this);
+  }
+
+  void addFolder(ImageBattleFolder folder) {
+    database.addFolder(folder);
+  }
+
 }

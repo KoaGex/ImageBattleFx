@@ -1,6 +1,11 @@
 package org.imagebattle;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -67,21 +72,33 @@ public class ImageBattleFolder {
 
   private final MediaType mediaType;
 
+  private final File directory;
+
+  private final boolean recursive;
+
+  private final String name;
+
   /**
    * @param centralStorage
    *          TODO
    * @param chosenDirectory
-   * @param fileRegex
    * @param recursive
+   * @param name
+   *          TODO
+   * @param fileRegex
    */
   public ImageBattleFolder(//
       CentralStorage centralStorage, //
       File chosenDirectory, //
       MediaType mediaType, //
-      Boolean recursive//
+      Boolean recursive, //
+      String name//
   ) {
     this.centralStorage = centralStorage;
     this.mediaType = mediaType;
+    this.recursive = recursive;
+    this.name = name;
+    directory = chosenDirectory;
     Predicate<File> fileRegex = mediaType::matches;
 
     graph = new TransitiveDiGraph();
@@ -119,11 +136,12 @@ public class ImageBattleFolder {
                                                 // loss.
     log.warn("these {} files were in the edges and in ignore list of central storage: {}",
         intersection.size(), intersection);
-    List<File> inconsistencies = centralStorage.getInconsistencies();
-    long count = inconsistencies.stream()//
-        .filter(intersection::contains)//
-        .count();
-    log.warn(" {} are in global AND local inconsistencies", count);
+
+    // List<File> inconsistencies = centralStorage.getInconsistencies();
+    // long count = inconsistencies.stream()//
+    // .filter(intersection::contains)//
+    // .count();
+    // log.warn(" {} are in global AND local inconsistencies", count);
 
     // choosing algorithms
     Map<String, ACandidateChooser> newChoosingAlorithms = choosingAlgorithms;
@@ -140,7 +158,7 @@ public class ImageBattleFolder {
         graph);
     newChoosingAlorithms.put("SameWinLoseRatio", sameWinLoseRatio);
 
-    choosingAlgorithm = sameWinLoseRatio;
+    choosingAlgorithm = winnerOriented;
 
   }
 
@@ -332,6 +350,103 @@ public class ImageBattleFolder {
 
   ReadOnlyBooleanProperty finishedProperty() {
     return graph.finishedProperty();
+  }
+
+  public File getDirectory() {
+    return directory;
+  }
+
+  public boolean isRecursive() {
+    return recursive;
+  }
+
+  public MediaType getMediaType() {
+    return mediaType;
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  String jsonGraph() {
+    String nodeList = graph.vertexSet().stream()//
+        .map(File::getAbsolutePath)//
+        .map(String::hashCode)//
+        .map(it -> "{\"id\": \"" + it + "\"}")//
+        .collect(Collectors.joining(",\n"));
+    String nodes = " \"nodes\": [" + nodeList + "]";
+
+    String linkList = graph.edgeSet().stream()//
+        .map(e -> {
+          File source = graph.getEdgeSource(e);
+          File target = graph.getEdgeTarget(e);
+          return " {\"source\": \"" + source.getAbsolutePath().hashCode() + "\", \"target\": \""
+              + target.getAbsolutePath().hashCode() + "\"}";
+        })//
+        .collect(Collectors.joining(",\n"));
+    String links = " \"links\": [" + linkList + "]";
+    return "{" + nodes + "," + links + "}";
+  }
+
+  String dotLanguageGraph() {
+    List<File> nodes = graph.vertexSet().stream().collect(Collectors.toList());
+    HashMap<File, Integer> nodeMap = new HashMap<>();
+    for (int i = 0; i < nodes.size(); i++) {
+      nodeMap.put(nodes.get(i), i);
+    }
+
+    String edges = graph.simplifiedEdges().stream()//
+        .map(e -> {
+          Integer source = nodeMap.get(graph.getEdgeSource(e));
+          Integer target = nodeMap.get(graph.getEdgeTarget(e));
+          return source + " -> " + target + ";";
+        })//
+        .collect(Collectors.joining("\n"));
+
+    Map<Integer, List<File>> winLoseDeltaMap = graph.vertexSet().stream()
+        .collect(Collectors.groupingBy(v -> graph.outDegreeOf(v) - graph.inDegreeOf(v)));
+    String rankGrouping = winLoseDeltaMap.entrySet().stream()//
+        .map(entry -> {
+          List<File> group = entry.getValue();
+          String normalNodes = group.stream()//
+              .map(nodeMap::get)//
+              .map(String::valueOf)//
+              .collect(Collectors.joining(","));
+          return ("lvl" + entry.getKey()).replaceAll("-", "_") + "," + normalNodes;
+        })//
+        .map(list -> String.format("{ rank= same; %s}", list))//
+        .collect(Collectors.joining("\n"));
+
+    String rankingEdges = winLoseDeltaMap.keySet().stream()//
+        .sorted(Comparator.reverseOrder())//
+        .map(i -> ("lvl" + i).replaceAll("-", "_"))//
+        .collect(Collectors.joining("->"));
+
+    return "\ndigraph G {\r\n"
+        + "node[style=filled, fontsize=10, width=.25, height=.2,fixedsize=true];\n" + //
+        edges //
+        + "\n" + rankingEdges //
+        + "\n" + rankGrouping + "\n}";
+
+  }
+
+  public void writeGraphImage(String directory, String fileName) {
+    String dotLanguageGraph = dotLanguageGraph();
+    String graphFile = directory + fileName + ".gv";
+    String outputFile = directory + fileName + ".png";
+    try {
+      Files.write(Paths.get(graphFile), dotLanguageGraph.getBytes(Charset.forName("UTF-8")));
+
+      Runtime.getRuntime()
+          .exec(new String[] { "c:\\Program Files (x86)\\Graphviz2.38\\bin\\dot.exe",
+              "-o" + outputFile, //
+              "-Tpng", //
+              graphFile });
+
+      // Files.delete(Paths.get(graphFile));
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
   }
 
 }

@@ -10,10 +10,12 @@ apply plugin: 'eclipse'
 dependencies {
   compile group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.3'
   compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.3'
-  // compile group: 'com.sparkjava', name: 'spark-core', version: '2.2'
+  compile group: 'com.sparkjava', name: 'spark-core', version: '2.5.5'
   // compile group: 'org.freemarker', name: 'freemarker', version: '2.3.22'
   compile group: 'org.jgrapht', name: 'jgrapht-core', version: '0.9.1'  // graphs
   compile group: 'com.drewnoakes', name: 'metadata-extractor', version: '2.8.1'  // reading image exif tags for taken on date
+  compile group: 'org.hamcrest', name: 'hamcrest-all', version: '1.3'
+  compile group: 'com.j2html', name: 'j2html', version: '0.88'
   
   
   // read mp3 tags

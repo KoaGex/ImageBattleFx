@@ -1,0 +1,9 @@
+body {
+	font-family: sans-serif;
+}
+
+
+/* only columns 1 to 3 */
+tbody tr td:nth-child(-n+3) {
+  text-align: right;
+}

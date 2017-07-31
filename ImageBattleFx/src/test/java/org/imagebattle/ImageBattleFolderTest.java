@@ -41,7 +41,7 @@ public class ImageBattleFolderTest {
     Boolean recursive = true;
     // act
     ImageBattleFolder folder = new ImageBattleFolder(centralStorage, root, MediaType.IMAGE,
-        recursive);
+        recursive, "name");
 
     // assert
     List<ResultListEntry> resultList = folder.getResultList();
@@ -66,7 +66,7 @@ public class ImageBattleFolderTest {
     Boolean recursive = true;
     // act
     ImageBattleFolder folder = new ImageBattleFolder(centralStorage, root, MediaType.IMAGE,
-        recursive);
+        recursive, "name");
 
     // assert
     List<ResultListEntry> resultList = folder.getResultList();
@@ -88,7 +88,7 @@ public class ImageBattleFolderTest {
     Boolean recursive = false;
     CentralStorage centralStorage = centralStorageRule.centralStorage();
     ImageBattleFolder folder = new ImageBattleFolder(centralStorage, root, MediaType.IMAGE,
-        recursive);
+        recursive, "name");
 
     // act
     folder.makeDecision(fileWinner, fileLoser);
@@ -125,7 +125,7 @@ public class ImageBattleFolderTest {
     File root = temporaryFolder.getRoot();
     Boolean recursive = true;
     ImageBattleFolder folder = new ImageBattleFolder(centralStorage, root, MediaType.IMAGE,
-        recursive);
+        recursive, "name");
 
     // act
     folder.makeDecision(fileWinner, fileInconsistend);
@@ -144,7 +144,7 @@ public class ImageBattleFolderTest {
     Boolean recursive = false;
     CentralStorage centralStorage = centralStorageRule.centralStorage();
     ImageBattleFolder folder = new ImageBattleFolder(centralStorage, root, MediaType.IMAGE,
-        recursive);
+        recursive, "name");
 
     // act
     folder.ignoreFile(file);
@@ -179,7 +179,7 @@ public class ImageBattleFolderTest {
     File root = temporaryFolder.getRoot();
     Boolean recursive = true;
     ImageBattleFolder folder = new ImageBattleFolder(centralStorage, root, MediaType.IMAGE,
-        recursive);
+        recursive, "name");
 
     // act
     folder.ignoreFile(fileInconsistend);

@@ -159,7 +159,7 @@ public class ImageBattleApplication extends Application {
 
     // gather images
     CentralStorage centralStorage = new CentralStorage(CentralStorage.SQLITE_FILE);
-    imageBattleFolder = new ImageBattleFolder(centralStorage, dir, mediaType, recursive);
+    imageBattleFolder = new ImageBattleFolder(centralStorage, dir, mediaType, recursive, "name");
 
     ratingScene = ratingSceneCreator.apply(imageBattleFolder, this::showResultsScene);
 

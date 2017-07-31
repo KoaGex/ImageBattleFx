@@ -1,0 +1,57 @@
+body {
+	font-family: sans-serif;
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+}
+
+a {
+	min-width: 100%;
+}
+
+div {
+	height: 200px;
+	width: auto;
+	margin: 1em;
+	flex-direction: column;
+	align-items: center;
+	position: relative;
+}
+
+span {
+	position: absolute;
+	bottom: 5px;
+	z-index: 1;
+	color: white;
+	background: #454545;
+	border-radius: 3px;
+	padding: 0px 2px;
+}
+
+div form {
+	position: absolute;
+	top: 5px;
+	right: 5px;
+}
+
+div form input {
+	color: white;
+	background: #454545;
+	border-radius: 3px;
+	cursor: pointer;
+	border: none;
+	padding: 0px 2px;
+}
+
+.rank {
+	left: 5px;
+}
+
+.winloss {
+	right: 5px;
+}
+
+img {
+	height: 200px;
+	width: auto;
+}

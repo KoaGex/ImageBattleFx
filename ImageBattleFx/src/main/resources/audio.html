@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<title>AudioBattle #FOLDER_NAME#</title>
+<meta http-equiv="content-type" content="text/html;charset=utf-8" />
+<style>
+
+audio {
+	width: 600px;
+	display: block;
+	margin-top: 0.5em;
+}
+body {
+	font-family: sans-serif;
+
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+}
+.links {
+	min-width: 100%;
+}
+.audio-group {
+	margin: 1em;
+	display: flex;
+	flex-direction: column;
+	align-items:center;
+}
+input {
+	margin: 0.5em;
+}
+
+</style>
+</head>
+
+<body>
+	<div class="links">
+		<a href="/results/#FOLDER_NAME#">Results</a> <a href="/folders">folders</a>
+	</div>
+	<div class="audio-group">
+		<div>#AUDIO_DESCRIPTION_1#</div>
+		<audio id="audio1" src="#AUDIO_SOURCE_1#" controls preload="auto">
+		</audio>
+		<form action="/choose/#FOLDER_NAME#" method="post">
+			<input type="hidden" name="winner" value="#ID_1#" />
+			<input type="hidden" name="loser" value="#ID_2#" />
+			<input type="submit" name="choose" value="Choose" />
+
+			<input type="hidden" name="ignore" value="#ID_1#" />
+			<input type="submit" name="ignoreButton" value="Ignore" />
+		</form>
+	</div>
+	<div class="audio-group">
+		<div>#AUDIO_DESCRIPTION_2#</div>
+		<audio id="audio2" src="#AUDIO_SOURCE_2#" controls preload="auto">
+		</audio>
+		<form action="/choose/#FOLDER_NAME#" method="post">
+			<input type="hidden" name="winner" value="#ID_2#" />
+			<input type="hidden" name="loser" value="#ID_1#" />
+			<input type="submit" name="choose" value="Choose" />
+
+			<input type="hidden" name="ignore" value="#ID_2#" />
+			<input type="submit" name="ignoreButton" value="Ignore" />
+		</form>
+	</div>
+
+
+	<script>
+		var audio1 = document.getElementById("audio1");
+		var audio2 = document.getElementById("audio2");
+		audio1.onended = function() {
+			audio1.currentTime = 0;
+			audio2.play();
+		};
+		audio1.onplay = function() {
+			audio2.pause();
+		};
+		audio2.onended = function() {
+			audio2.currentTime = 0;
+			audio1.play();
+		};
+		audio2.onplay = function() {
+			audio1.pause();
+		};
+	</script>
+</body>
+
+</html>

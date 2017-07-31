@@ -60,6 +60,7 @@ final class Database {
     createIfMissing.accept(FILES, this::createFilesTable);
     createIfMissing.accept(IGNORED, this::createIgnoredTable);
     createIfMissing.accept(EDGES, this::createEdgesTable);
+    createIfMissing.accept("folders", this::createFoldersTable);
 
   }
 
@@ -85,6 +86,7 @@ final class Database {
   }
 
   TransitiveDiGraph queryEdges() {
+    LOG.debug("start");
 
     final String query = "select f_win.absolute_path, f_los.absolute_path " + //
         " from " + EDGES + " e " + //
@@ -96,7 +98,7 @@ final class Database {
         " on m_los.id = e.loser " + //
         " join " + FILES + " f_los " + //
         " on f_los.media_object = m_los.id " //
-        ;
+    ;
 
     final RowMapper<Pair<String, String>> rowMapper = resultSet -> new Pair<String, String>(
         resultSet.getString(1), resultSet.getString(2));
@@ -104,13 +106,8 @@ final class Database {
     LOG.debug(filesPaths.size());
 
     final TransitiveDiGraph result = new TransitiveDiGraph();
-    for (final Pair<String, String> pair : filesPaths) {
-      final File winner = new File(pair.getKey());
-      final File loser = new File(pair.getValue());
-      result.addVertex(winner);
-      result.addVertex(loser);
-      result.addEdge(winner, loser);
-    }
+    result.addNormalEdges(filesPaths);
+    LOG.debug("finished building graph");
 
     return result;
   }
@@ -120,6 +117,12 @@ final class Database {
       final Predicate<? super File> matchesFileRegex, //
       final Boolean recursive //
   ) {
+    LOG.debug("start");
+
+    /*
+     * Regex can not be used in sqlite by default:
+     * http://stackoverflow.com/questions/5071601/how-do-i-use-regex-in-a-sqlite-query#8338515
+     */
 
     final String query = "select f_win.absolute_path, f_los.absolute_path " + //
         " from " + EDGES + " e " + //
@@ -130,14 +133,16 @@ final class Database {
         " join  " + MEDIA_OBJECTS + " m_los" + //
         " on m_los.id = e.loser " + //
         " join " + FILES + " f_los " + //
-        " on f_los.media_object = m_los.id " //
-        ;
+        " on f_los.media_object = m_los.id " + //
+        " where f_win.absolute_path like '" + chosenDirectory.getAbsolutePath() + "%'"//
+    ;
 
     final RowMapper<Pair<String, String>> rowMapper = resultSet -> new Pair<String, String>(
         resultSet.getString(1), //
         resultSet.getString(2)//
     );
     final List<Pair<String, String>> filesPaths = query(query, rowMapper);
+    LOG.debug("query finished");
 
     final Predicate<File> containedRecursively = file -> {
       return file.getAbsolutePath().startsWith(chosenDirectory.getAbsolutePath());
@@ -160,9 +165,12 @@ final class Database {
         })//
         .collect(Collectors.toList());
 
+    LOG.info("finished matching pairs. count: {}", matchingPairs.size());
+
     final Set<File> duplicateFiles = Stream
         .concat(matchingPairs.stream().map(pair -> pair.getKey()),
 
+            // TODO why are we calculating file hashes of image files when audio battle was started?
             matchingPairs.stream().map(pair -> pair.getKey()))//
         .distinct()//
         .map(File::new)//
@@ -239,6 +247,7 @@ final class Database {
    * @return Set containing all existing files that are ignored.
    */
   Set<File> queryIgnored() {
+    LOG.debug("start");
 
     final String query = "select files.absolute_path from " + FILES + " join  " + MEDIA_OBJECTS
         + " on " + MEDIA_OBJECTS + ".id =" + FILES + ".media_object join " + IGNORED + " on "
@@ -335,6 +344,18 @@ final class Database {
     executeSql(createTable);
   }
 
+  private void createFoldersTable() {
+    final String createTable = //
+        " CREATE TABLE folders ( " + //
+            " name TEXT NOT NULL, " + //
+            " media_type TEXT NOT NULL, " + //
+            " directory TEXT NOT NULL, " + //
+            " recursive TEXT NOT NULL " + //
+            " ) "//
+    ;
+    executeSql(createTable);
+  }
+
   /**
    * Add one item to the media_objects table. One mediaObject represents one image, musicTrack or
    * whatever else may be added.
@@ -359,7 +380,7 @@ final class Database {
 
     // TODO preparedStatement? test performance
     final String insert = "insert into " + FILES + " (media_object, absolute_path) values ("
-        + mediaObjectId + ",'" + file.getAbsolutePath() + "')";
+        + mediaObjectId + ",'" + file.getAbsolutePath().replace("'", "''") + "')";
 
     executeSql(insert);
   }
@@ -371,8 +392,9 @@ final class Database {
   protected Optional<Integer> lookupFile(final File file) {
 
     final String query = "select media_object from " + FILES + " where absolute_path = '"
-        + file.getAbsolutePath() + "'";
+        + file.getAbsolutePath().replace("'", "''") + "'";
 
+    LOG.trace(query);
     final List<Integer> files = query(query, rs -> rs.getInt(1));
     return files.stream()//
         .findAny();
@@ -389,18 +411,18 @@ final class Database {
    * @return Zero or more {@link MediaObject} that match the given criteria.
    */
   Collection<MediaObject> queryMediaObjects() {
-    final String query = "select * from " + MEDIA_OBJECTS;
+    String query = "select * from " + MEDIA_OBJECTS;
 
-    final RowMapper<MediaObject> mediaObjectMapper = resultSet -> {
-      final int id = resultSet.getInt("id");
-      final String hash = resultSet.getString("hash");
-      final String mediaTypeString = resultSet.getString("media_type");
-      final MediaType mediaType = MediaType.valueOf(mediaTypeString);
-      final MediaObject mediaObject = new MediaObject(id, hash, mediaType);
+    RowMapper<MediaObject> mediaObjectMapper = resultSet -> {
+      int id = resultSet.getInt("id");
+      String hash = resultSet.getString("hash");
+      String mediaTypeString = resultSet.getString("media_type");
+      MediaType mediaType = MediaType.valueOf(mediaTypeString);
+      MediaObject mediaObject = new MediaObject(id, hash, mediaType);
       return mediaObject;
     };
 
-    final List<MediaObject> result = query(query, mediaObjectMapper);
+    List<MediaObject> result = query(query, mediaObjectMapper);
 
     return result;
   }
@@ -414,6 +436,33 @@ final class Database {
     for (final File file : files) {
       mediaId(file);
     }
+  }
+
+  List<ImageBattleFolder> queryFolders(CentralStorage centralStorage) {
+    String query = "select * from folders";
+
+    RowMapper<ImageBattleFolder> mediaObjectMapper = resultSet -> {
+      String name = resultSet.getString("name");
+      String mediaTypeString = resultSet.getString("media_type");
+      MediaType mediaType = MediaType.valueOf(mediaTypeString);
+      String directory = resultSet.getString("directory");
+      File chosenDirectory = new File(directory);
+      boolean recursive = Boolean.parseBoolean(resultSet.getString("recursive"));
+      return new ImageBattleFolder(centralStorage, chosenDirectory, mediaType, recursive, name);
+    };
+
+    return query(query, mediaObjectMapper);
+  }
+
+  void addFolder(ImageBattleFolder folder) {
+
+    final String insert = "insert into folders values ("//
+        + "'" + folder.getName() + "'," //
+        + "'" + folder.getMediaType().name() + "'," //
+        + "'" + folder.getDirectory().getAbsolutePath() + "'," //
+        + "'" + folder.isRecursive() + "')";
+    LOG.debug(insert);
+    executeSql(insert);
   }
 
   /**

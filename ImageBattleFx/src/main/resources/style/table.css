@@ -1,0 +1,19 @@
+
+table {
+  margin: 0 auto;
+  background-color: #fff;
+  padding: 1em;
+  border-collapse: collapse;
+}
+
+th, td {
+ padding: 0.2em 2vw;
+}
+
+tr:nth-child(odd) {
+    background: #f2f2ff;
+}
+
+th {
+  letter-spacing: 0.05em;
+}

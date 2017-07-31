@@ -1,0 +1,258 @@
+<html>
+
+<head>
+<title>ImageBattle #FOLDER_NAME#</title>
+<meta http-equiv="content-type" content="text/html;charset=utf-8" />
+<style>
+body {
+	font-family: sans-serif;
+}
+
+.links {
+	position: fixed;
+	top: 0;
+	left: 0;
+}
+
+img {
+	padding: 1px;
+}
+
+.case1 {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	height: 100%;
+}
+
+.case2 {
+	display: flex;
+	flex-direction: row;
+	justify-content: center;
+	align-items: center;
+	height: 100%;
+}
+
+.case2 img {
+	margin: 0;
+}
+
+.case3 img {
+	margin: auto;
+}
+
+.case4 {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	height: 100%;
+}
+
+/* button positioning */
+form {
+	position: fixed;
+	bottom: 0;
+	width: 150px;
+}
+
+#form1 {
+	left: 0;
+}
+
+#form2 {
+	right: 0;
+}
+
+.modal {
+	display: none; /* Hidden by default */
+	position: fixed; /* Stay in place */
+	z-index: 1; /* Sit on top */
+	left: 0;
+	top: 0;
+	width: 100%; /* Full width */
+	height: 100%; /* Full height */
+	background-color: rgb(0, 0, 0); /* Fallback color */
+	background-color: rgba(0, 0, 0, 0.9); /* Black w/ opacity */
+}
+
+.modal-content {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-width: 100%;
+    max-height: 100%;
+    margin: auto;
+    overflow: auto;
+}
+
+</style>
+
+</head>
+
+<body onresize="resize()">
+	<div class="links">
+		<a href="/results/#FOLDER_NAME#">Results</a> <a href="/folders">folders</a>
+	</div>
+
+	<div id="div" class="case1">
+		<img id="img1" src="#SOURCE_1#" height="auto" /> <img id="img2"
+			src="#SOURCE_2#" height="auto" />
+	</div>
+
+	<form id="form1" action="/choose/#FOLDER_NAME#" method="post">
+		<input type="hidden" name="winner" value="#ID_1#" />
+		<input type="hidden" name="loser" value="#ID_2#" />
+		<input id="chooseLeft" type="submit" name="choose" value="Choose" />
+
+		<input type="hidden" name="ignore" value="#ID_1#" />
+		<input type="submit" name="ignoreButton" value="Ignore" />
+	</form>
+
+	<form id="form2" action="/choose/#FOLDER_NAME#" method="post">
+		<input type="hidden" name="winner" value="#ID_2#" />
+		<input type="hidden" name="loser" value="#ID_1#" />
+		<input id="chooseRight" type="submit" name="choose" value="Choose" />
+
+		<input type="hidden" name="ignore" value="#ID_2#" />
+		<input type="submit" name="ignoreButton" value="Ignore" />
+	</form>
+
+	<!-- The Modal -->
+	<div id="myModal" class="modal"
+		onclick="document.getElementById('myModal').style.display='none'">
+
+		<img class="modal-content" id="modalImage">
+	</div>
+
+	<script>
+		function resize() {
+			var image1 = document.getElementById("img1");
+			var image2 = document.getElementById("img2");
+			// image.naturalHeight
+			// image.naturalWidth
+
+			// screen size
+			var w = window, d = document, e = d.documentElement, g = d
+					.getElementsByTagName('body')[0], x = w.innerWidth
+					|| e.clientWidth || g.clientWidth, y = w.innerHeight
+					|| e.clientHeight || g.clientHeight;
+			console.log(x + " - " + y);
+
+			var windowWidth = x;
+			var windowHeight = y;
+
+			var leftWidth = image1.naturalWidth
+			var leftHeight = image1.naturalHeight
+			var rightWidth = image2.naturalWidth
+			var rightHeight = image2.naturalHeight;
+
+			/*
+			in the end we need a sizing factor for each image
+
+			no image can be higher or wider than the window
+
+			both images together can't be wider or higher than the window
+
+			both images should in the end, have the same area
+			
+			Layouting cases (see image_battle_layout.png)
+			1. Window is wider than images placed horizontally
+			    factor determined by  windowHeight / maxHeight(left,right)
+			2. horizontal layout but window is not mega wide
+			    factor = windowWidth / (w1 + w2 )
+			3. vertical layout with horitonral space
+			    windowHeight / (h1 + h2)
+			4. very slim window
+			    windowWidth / max(w1, w2)
+			 */
+			var leftArea = leftWidth * leftHeight;
+			var rightArea = rightWidth * rightHeight;
+			var leftRightFactor = leftArea / rightArea;
+			var rightAdaptedWidth = Math.sqrt(leftRightFactor) * rightWidth;
+			var rightAdaptedHeight = Math.sqrt(leftRightFactor) * rightHeight;
+
+			var widthSum = leftWidth + rightAdaptedWidth;
+			var maxHeight = Math.max(leftHeight, rightAdaptedHeight);
+			var heightSum = leftHeight + rightAdaptedHeight;
+			var maxWidth = Math.max(leftWidth, rightAdaptedWidth);
+
+			// big ratio meands wide
+			var horizontalRatio = widthSum / maxHeight;
+			var verticalRatio = maxWidth / heightSum;
+			var windowRatio = windowWidth / windowHeight;
+
+			console.log("---------");
+			console.log(horizontalRatio);
+			console.log(windowRatio);
+			console.log(verticalRatio);
+
+			var case2Factor = windowWidth / widthSum;
+			var case3Factor = windowHeight / heightSum;
+
+			var case1 = windowRatio > horizontalRatio;
+			// how to decide between 2 and 3? Which gives the biggest factor
+			var case2 = case2Factor > case3Factor;
+			var case3 = windowRatio > verticalRatio;
+
+			var horizontalMode = case2;
+			if (horizontalMode) {
+				image1.style.display = "inline";
+				image2.style.display = "inline";
+			} else {
+				image1.style.display = "block";
+				image2.style.display = "block";
+			}
+
+			var div = document.getElementById("div");
+
+			var factor;
+
+			if (case1) {
+				div.className = "case1";
+				factor = windowHeight / maxHeight;
+			} else if (case2) {
+				div.className = "case2";
+				factor = windowWidth / widthSum;
+			} else if (case3) {
+				div.className = "case3";
+				factor = windowHeight / heightSum;
+			} else {
+				div.className = "case4";
+				factor = windowWidth / maxWidth;
+			}
+			image1.style.width = leftWidth * factor - 10;
+			image2.style.width = rightAdaptedWidth * factor - 10;
+
+		}
+
+		window.onload = resize;
+
+		// hotkeys
+		document.onkeypress = function(keypress) {
+			if (keypress.key == "h") {
+				document.getElementById("chooseLeft").click();
+			}
+			if (keypress.key == "l") {
+				document.getElementById("chooseRight").click();
+			}
+		}
+
+		// show pic full screen
+		var modal = document.getElementById('myModal');
+		var modalImg = document.getElementById("modalImage");
+		var maximize = function() {
+			modal.style.display = "block";
+			modalImg.src = this.src;
+		}
+		document.getElementById("img1").onclick = maximize;
+		document.getElementById("img2").onclick = maximize;
+	</script>
+</body>
+
+
+
+
+</html>

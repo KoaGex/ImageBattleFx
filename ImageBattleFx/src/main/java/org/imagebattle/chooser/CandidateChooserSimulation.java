@@ -1,8 +1,15 @@
 package org.imagebattle.chooser;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -12,6 +19,11 @@ import org.apache.logging.log4j.Logger;
 import org.imagebattle.CentralStorage;
 import org.imagebattle.ImageBattleFolder;
 import org.imagebattle.MediaType;
+import org.imagebattle.ResultListEntry;
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartUtilities;
+import org.jfree.chart.JFreeChart;
+import org.jfree.data.category.DefaultCategoryDataset;
 
 /**
  * @author KoaGex
@@ -21,51 +33,121 @@ public class CandidateChooserSimulation {
   private static Logger log = LogManager.getLogger();
   // TODO turn this into a test?
 
+  // TODO new chart: how many are surely place x?
+  // TODO parameterize WinnerOriented
+  /*
+   * TODO write use cases - In Flames: find top 18 for a cd
+   */
   public static void main(String[] args) {
-    File funPicsDir = new File("D:\\bilder\\fun pics");
-    File imageBattleDat = new File(funPicsDir, "imageBattle.dat");
-    imageBattleDat.delete();
+
+    // TODO chart order fixable?
+
+    // File dir = new File("D:\\bilder\\fun pics");
+    File dir = new File("D:\\bilder\\2009\\2009-08-05wacken"); // 72 images
+
+    String userHome = System.getProperty("user.home");
+    File userHomeDirectory = new File(userHome);
+
+    File file = new File(userHomeDirectory, "candidateChooserSimulation.db");
 
     boolean recursive = false;
-    CentralStorage centralStorage = new CentralStorage(CentralStorage.SQLITE_FILE);
-    ImageBattleFolder folder = new ImageBattleFolder(centralStorage, funPicsDir, MediaType.IMAGE,
-        recursive);
 
-    List<File> files = folder.getResultList().stream().map(entry -> entry.file)
-        .collect(Collectors.toList());
+    List<String> chooserNames = Arrays.asList(//
+        CandidateChoosers.SameWinLoseRatio.getVisibleName(),
+        CandidateChoosers.Winner_Oriented.getVisibleName(),
+        CandidateChoosers.MinimumDegree.getVisibleName());
+    String directory = "D:\\tech\\graphviz\\";
+    DefaultCategoryDataset edgeCountDataSet = new DefaultCategoryDataset();
 
-    /*
-     * create one order of the files that should for this test represent the real order. First is
-     * the best and last the worst.
-     */
-    Collections.shuffle(files);
+    Map<Integer, DefaultCategoryDataset> pointDataMap = new HashMap<>();
 
-    // change this string to switch chooser
-    String chooser = "MaxNewEdges";
+    for (String chooser : chooserNames) {
 
-    folder.setChoosingAlgorithm(chooser);
-    log.warn("start with chooser: {}  ", chooser);
+      file.delete();
+      CentralStorage centralStorage = new CentralStorage(file.getName());
+      ImageBattleFolder folder = new ImageBattleFolder(centralStorage, dir, MediaType.IMAGE,
+          recursive, "name");
 
-    int counter = 0;
-    long start = System.currentTimeMillis();
-    boolean finished = false;
-    Optional<Pair<File, File>> nextToCompare;
-    nextToCompare = folder.getNextToCompare();
-    while (nextToCompare.isPresent()) {
+      List<File> files = folder.getResultList().stream().map(entry -> entry.file)
+          .collect(Collectors.toList());
+
+      /*
+       * create one order of the files that should for this test represent the real order. First is
+       * the best and last the worst.
+       */
+      Collections.shuffle(files);
+
+      // change this string to switch chooser
+
+      folder.setChoosingAlgorithm(chooser);
+      log.warn("start with chooser: {}  ", chooser);
+
+      int counter = 0;
+      long start = System.currentTimeMillis();
+      Optional<Pair<File, File>> nextToCompare;
       nextToCompare = folder.getNextToCompare();
-      Pair<File, File> pair = nextToCompare.get();
-      File key = pair.getKey();
-      File value = pair.getValue();
-      int keyIndex = files.indexOf(key);
-      int valueIndex = files.indexOf(value);
-      boolean keyIsBetter = keyIndex < valueIndex;
-      File winner = keyIsBetter ? key : value;
-      File loser = keyIsBetter ? value : key;
-      folder.makeDecision(winner, loser);
-      counter++;
+      while (nextToCompare.isPresent()) {
+        Pair<File, File> pair = nextToCompare.get();
+        File key = pair.getKey();
+        File value = pair.getValue();
+        int keyIndex = files.indexOf(key);
+        int valueIndex = files.indexOf(value);
+        boolean keyIsBetter = keyIndex < valueIndex;
+        File winner = keyIsBetter ? key : value;
+        File loser = keyIsBetter ? value : key;
+        folder.makeDecision(winner, loser);
+        counter++;
+
+        if (counter % 5 == 0) {
+          String fileName = chooser + "_" + String.format("%03d", counter);
+          folder.writeGraphImage(directory, fileName);
+
+          List<ResultListEntry> resultList = folder.getResultList();
+          int edgeCount = resultList.stream().mapToInt(e -> e.wins).sum();
+          edgeCountDataSet.addValue(edgeCount, chooser, String.valueOf(counter));
+
+          DefaultCategoryDataset dataset = pointDataMap.computeIfAbsent(counter,
+              i -> new DefaultCategoryDataset());
+          resultList.stream()//
+              .collect(Collectors.groupingBy(result -> result.wins - result.loses))//
+              .entrySet()//
+              .stream()//
+              .sorted(Comparator.comparing(Entry::getKey))//
+              .forEach(entry -> {
+                Integer points = entry.getKey();
+                List<ResultListEntry> list = entry.getValue();
+                dataset.addValue(list.size(), chooser, points);
+              });
+
+        }
+
+        nextToCompare = folder.getNextToCompare();
+      }
+      long end = System.currentTimeMillis();
+      log.warn("chooser: {}   decisions: {}     time: {}", chooser, counter, end - start);
+
     }
-    long end = System.currentTimeMillis();
-    log.warn("chooser: {}   decisions: {}     time: {}", chooser, counter, end - start);
+
+    JFreeChart lineChart = ChartFactory.createLineChart("title", "category", "value",
+        edgeCountDataSet);
+    try {
+      ChartUtilities.saveChartAsJPEG(new File(directory, "edgeCount.jpg"), lineChart, 1800, 900);
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+
+    pointDataMap.forEach((counter, data) -> {
+
+      JFreeChart pointChart = ChartFactory.createLineChart("title", "category", "value", data);
+      try {
+        ChartUtilities.saveChartAsJPEG(
+            new File(directory, "pointChart_" + String.format("%03d", counter) + ".jpg"),
+            pointChart, 1800, 900);
+      } catch (IOException e) {
+        throw new UncheckedIOException(e);
+      }
+
+    });
 
     // funpics
     // chooser: SameWinLoseRatio decisions: 993 time: 9255
@@ -84,7 +166,6 @@ public class CandidateChooserSimulation {
 
     // TODO check that result list is the same as files
 
-    finished = true;
   }
 
 }

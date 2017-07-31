@@ -47,7 +47,7 @@ public class ImageBattleSceneTest extends ApplicationTest {
     File folderDir = new File("src/test/resources");
     Assume.assumeTrue(folderDir.exists());
     ImageBattleScene battleScene = ImageBattleScene.createBattleScene(
-        new ImageBattleFolder(centralStorage, folderDir, MediaType.IMAGE, recursive),
+        new ImageBattleFolder(centralStorage, folderDir, MediaType.IMAGE, recursive, "name"),
         switchSceneAction);
 
     stage.setScene(battleScene);

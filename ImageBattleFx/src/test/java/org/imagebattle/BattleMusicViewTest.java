@@ -25,7 +25,7 @@ public class BattleMusicViewTest extends ApplicationTest {
   }
 
   @Test(timeout = 5000)
-  public void test() {
+  public void onEndOfMedia() {
     SimpleBooleanProperty bool = new SimpleBooleanProperty();
     bool.set(false);
     battleMusicView.setOnEndOfMedia(() -> {

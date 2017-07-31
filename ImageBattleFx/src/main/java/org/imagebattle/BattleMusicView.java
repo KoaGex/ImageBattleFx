@@ -5,9 +5,6 @@ import java.net.URI;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -20,6 +17,8 @@ import javafx.scene.layout.Priority;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
 import javafx.util.Duration;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 final class BattleMusicView extends GridPane implements IMediaView {
   private static Logger log = LogManager.getLogger();
@@ -180,6 +179,9 @@ final class BattleMusicView extends GridPane implements IMediaView {
   }
 
   void setOnEndOfMedia(Runnable onFinishAction) {
+    if (player != null) {
+      player.setOnEndOfMedia(onFinishAction);
+    }
     onEndOfMedia = onFinishAction;
   }
 

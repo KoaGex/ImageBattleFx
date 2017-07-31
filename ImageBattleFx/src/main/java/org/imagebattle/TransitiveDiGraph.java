@@ -11,6 +11,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -209,6 +210,20 @@ public class TransitiveDiGraph extends SimpleDirectedGraph<File, DefaultEdge> {
     return wasRemoved;
   };
 
+  public void addNormalEdges(List<Pair<String, String>> filesPaths) {
+
+    // add all edges
+    for (Pair<String, String> pair : filesPaths) {
+      final File winner = new File(pair.getKey());
+      final File loser = new File(pair.getValue());
+      addVertex(winner);
+      addVertex(loser);
+      super.addEdge(winner, loser);
+    }
+    // TODO check if transitive is still fulfilled
+
+  }
+
   ReadOnlyBooleanProperty finishedProperty() {
     return finished;
   }
@@ -230,5 +245,13 @@ public class TransitiveDiGraph extends SimpleDirectedGraph<File, DefaultEdge> {
     int maxEdgeCount = getMaxEdgeCount();
     boolean graphCompleted = currentEdgeCount == maxEdgeCount;
     finished.set(graphCompleted);
+  }
+
+  List<DefaultEdge> simplifiedEdges() {
+    Predicate<DefaultEdge> isTransitiveEdge = e -> vertexSet().stream()//
+        .anyMatch(v -> containsEdge(getEdgeSource(e), v) && containsEdge(v, getEdgeTarget(e)));
+    return edgeSet().stream()//
+        .filter(isTransitiveEdge.negate())//
+        .collect(Collectors.toList());
   }
 }

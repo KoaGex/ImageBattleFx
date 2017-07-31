@@ -31,7 +31,7 @@ public class SameWinLoseRationCandidateChooser extends ACandidateChooser {
         .stream()//
         .collect(Collectors.groupingBy(graph::getWinLoseDifference));
 
-    log.debug("number of groups: {}", differenceMap.size());
+    log.trace("number of groups: {}", differenceMap.size());
 
     Optional<List<File>> biggestGroup = differenceMap//
         .values()//
@@ -39,7 +39,7 @@ public class SameWinLoseRationCandidateChooser extends ACandidateChooser {
         .max(Comparator.comparing(List::size))//
         .map(list -> {
           Integer difference = graph.getWinLoseDifference(list.get(0));
-          log.debug("list size: {}  difference: {}", list.size(), difference);
+          log.trace("list size: {}  difference: {}", list.size(), difference);
           return list;
         });
 

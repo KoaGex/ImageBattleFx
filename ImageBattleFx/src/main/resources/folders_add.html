@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<title>MediaBattle: Add Folder</title>
+<meta http-equiv="content-type" content="text/html;charset=utf-8" />
+</head>
+
+
+<body>
+	<form action="/folders/add" method="post">
+		Name
+		<input type="text" name="name">
+		<br> <br> Media Type <br>
+		<input type="radio" name="media_type" value="IMAGE" checked>
+		Image <br>
+		<input type="radio" name="media_type" value="MUSIC">
+		Audio <br> <br> Directory
+		<input type="text" name="directory">
+		<br> <br> Recursive
+		<input type="checkbox" name="recursive" value="true">
+		<br> <br>
+
+		<input type="submit" value="Save" />
+
+	</form>
+</body>
+
+</html>

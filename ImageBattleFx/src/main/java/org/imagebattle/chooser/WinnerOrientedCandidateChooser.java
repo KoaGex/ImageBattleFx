@@ -7,11 +7,10 @@ import java.util.function.Supplier;
 import java.util.function.ToIntFunction;
 import java.util.stream.Stream;
 
+import javafx.util.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.imagebattle.TransitiveDiGraph;
-
-import javafx.util.Pair;
 
 public class WinnerOrientedCandidateChooser extends ACandidateChooser {
   private static Logger log = LogManager.getLogger();
@@ -50,7 +49,21 @@ public class WinnerOrientedCandidateChooser extends ACandidateChooser {
       int winDistance = Math.abs(winCountKey - winCountValue);// prefer 4-4 over 2-8 => low distance
                                                               // ist good
 
-      return 10 * loseSum + 8 * loseDistance - winSum + 5 * winDistance;
+      // i want to prefer (8,8) vs (0,0) over (0,0) vs (0,0)
+      int pointsKey = winCountKey - loseCountKey;
+      int pointsValue = winCountValue - loseCountValue;
+      int pointsDistance = Math.abs(pointsValue - pointsKey);
+
+      int battleCountKey = winCountKey + loseCountKey;
+      int battleCountValue = winCountValue + loseCountValue;
+      int battleCountDistance = Math.abs(battleCountValue - battleCountKey);
+
+      return 10 * loseSum //
+          + 8 * loseDistance //
+          - winSum //
+          + 5 * winDistance //
+          + 6 * pointsDistance //
+          - 3 * battleCountDistance;
     };
 
     // normal sorting is ascending ( small to big )

@@ -8,7 +8,6 @@ import java.util.function.Function;
 import javax.sound.sampled.AudioFileFormat;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.farng.mp3.MP3File;
@@ -32,6 +31,12 @@ final class MusicFile extends MP3File {
    * Constructor replacement to avoid handling the exceptions.
    */
   protected static MusicFile create(File file) {
+
+    // Avoid org.farng.mp3.TagException: Unable to create FilenameTag
+    if (file.getName().contains("(") && !file.getName().contains(")")) {
+      return new MusicFile();
+    }
+
     try {
       return new MusicFile(file);
     } catch (IOException | TagException e) {
@@ -100,9 +105,11 @@ final class MusicFile extends MP3File {
       } else {
         throw new UnsupportedAudioFileException();
       }
-    } catch (UnsupportedAudioFileException | IOException | NullPointerException e) {
+    } catch (IOException | NullPointerException e) {
       LOG.catching(e);
-      e.printStackTrace();
+    } catch (UnsupportedAudioFileException e) {
+      LOG.trace("javax.sound.sampled.UnsupportedAudioFileException on file : {}",
+          mp3file.getAbsoluteFile());
     }
 
     return "";

@@ -7,9 +7,9 @@ import java.io.File;
  *
  */
 public class ResultListEntry {
-  int place;
-  int wins;
-  int loses;
+  public int place;
+  public int wins;
+  public int loses;
   public File file;
   boolean ignored = false;
   boolean fixed = false;
