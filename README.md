@@ -14,7 +14,3 @@ Each battle result will trigger a save. Results are stored as a graph in the dir
 ## Requirements
 
 You only need Java 8 with JavaFx. So maybe on Linux you need to get yourself an Oracle JRE.
-
-asfdsf
-afdss
-asf ** laa **
